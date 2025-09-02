@@ -1,0 +1,983 @@
+import React, { useState, useEffect, useRef } from 'react';
+import { Link, useNavigate } from 'react-router-dom';
+import { motion, AnimatePresence } from 'framer-motion';
+import { 
+  Plus, 
+  ChevronRight, 
+  CheckSquare, Square,
+  FileText, Briefcase, Target, Activity,
+  Eye, Edit2, X, ExternalLink
+} from 'lucide-react';
+import { useAuth } from '../context/AuthContext';
+import { useActivity } from '../context/ActivityContext';
+import { 
+  getResumes, 
+  getJobApplications, 
+  getInterviews, 
+  getUserStats, 
+  getActivities,
+  saveActivity
+} from '../lib/supabaseStorage';
+
+// Interface for activity item - aligning with ActivityContext type
+interface ActivityItem {
+  id?: string;
+  type: 'resume' | 'interview' | 'favorite' | 'application' | 'goal' | string;
+  action: string;
+  target?: string;
+  timestamp?: string | number;
+}
+
+// Interface for resume data - streamlined for dashboard UI
+interface Resume {
+  id: string;
+  name: string;
+  lastUpdated: string;
+  jobTitle?: string;
+  content?: string;
+}
+
+// Interface for interview data
+interface Interview {
+  id: string;
+  company: string;
+  position: string;
+  date: string;
+  status: 'upcoming' | '1st round completed' | 'waiting on final results' | 'did not get' | 'offer received';
+  notes: string;
+  skills: string[];
+}
+
+export default function Dashboard() {
+  // State
+  const [resumes, setResumes] = useState<Resume[]>([]);
+  const [interviews, setInterviews] = useState<Interview[]>([]);
+  const [goals, setGoals] = useState<any[]>([]);
+  const [newGoal, setNewGoal] = useState({ title: '', target: 0, current: 0, dueDate: '' });
+  const [isAddingGoal, setIsAddingGoal] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
+  // We'll handle errors through individual component states rather than a global error
+  const [userStats, setUserStats] = useState<any>(null);
+  // Resume modal states
+  const [selectedResume, setSelectedResume] = useState<Resume | null>(null);
+  const [showResumeModal, setShowResumeModal] = useState(false);
+  const modalRef = useRef<HTMLDivElement>(null);
+  
+  const navigate = useNavigate();
+  const { user } = useAuth();
+  const { addActivity, activities } = useActivity();
+
+  // Log activity and save to Supabase
+  const logActivity = async (activity: ActivityItem) => {
+    // Add to local activities list using the required type constraint
+    addActivity(activity.type, activity.action);
+    
+    // Save to Supabase for cross-device persistence
+    if (user) {
+      try {
+        await saveActivity(
+          user.id,
+          activity.type, 
+          activity.action,
+          { target: activity.target || '', timestamp: activity.timestamp || new Date().toISOString() }
+        );
+      } catch (error) {
+        console.error('Error saving activity to Supabase:', error);
+      }
+    }
+  };
+
+  // Load dashboard data from Supabase with localStorage as fallback
+  useEffect(() => {
+    const fetchData = async () => {
+      if (!user) return;
+      
+      setIsLoading(true);
+      
+      try {
+        // Get resumes from Supabase
+        const resumesData = await getResumes(user.id);
+        console.log(`Loaded ${resumesData.length} resumes from Supabase`);
+        
+        // Format resumes for the dashboard
+        const formattedResumes = resumesData.map((resume: any) => ({
+          id: resume.id || '',
+          name: resume.name || 'Unnamed Resume',
+          lastUpdated: resume.metadata?.lastModified || new Date().toISOString(),
+          jobTitle: resume.jobTitle || 'No Job Title',
+          content: JSON.stringify(resume)
+        }));
+        
+        setResumes(formattedResumes);
+        
+        // Get job applications
+        const applicationsData = await getJobApplications(user.id);
+        console.log(`Loaded ${applicationsData.length} job applications`);
+        
+        // Get interviews if available
+        try {
+          const interviewsData = await getInterviews(user.id);
+          console.log(`Loaded ${interviewsData.length} interviews`);
+          setInterviews(interviewsData);
+        } catch (error) {
+          console.warn('Could not load interviews, may not be implemented yet:', error);
+        }
+        
+        // Get user stats and update the state
+        try {
+          const stats = await getUserStats(user.id);
+          setUserStats(stats);
+          console.log('User stats loaded successfully');
+        } catch (error) {
+          console.warn('Could not load user stats:', error);
+        }
+        
+        // Get user activities - no need to set state since we use ActivityContext
+        try {
+          await getActivities(user.id, 10);
+          console.log('Activities loaded successfully');
+        } catch (error) {
+          console.warn('Could not load activities:', error);
+        }
+      } catch (error) {
+        console.error('Error fetching data:', error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    
+    fetchData();
+  }, [user]);
+
+  // Add an effect to debug loading state changes
+  useEffect(() => {
+    console.log("Dashboard render - isLoading:", isLoading);
+  }, [isLoading]);
+
+  // Function to handle goal form submission
+  const handleGoalSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    const goalId = crypto.randomUUID();
+    const newGoalItem = {
+      id: goalId,
+      title: newGoal.title,
+      target: newGoal.target,
+      current: 0,
+      dueDate: newGoal.dueDate,
+      completed: false
+    };
+    
+    const updatedGoals = [...goals, newGoalItem];
+    setGoals(updatedGoals);
+    
+    // Save to localStorage
+    localStorage.setItem('goals', JSON.stringify(updatedGoals));
+    
+    // Log the activity
+    logActivity({
+      type: 'goal',
+      action: 'created',
+      target: newGoal.title,
+      timestamp: Date.now()
+    });
+    
+    // Reset form
+    setNewGoal({
+      title: '',
+      target: 0,
+      current: 0,
+      dueDate: new Date().toISOString().split('T')[0]
+    });
+    setIsAddingGoal(false);
+  };
+  
+  // Function to toggle goal completion
+  const toggleGoalCompletion = (id: string) => {
+    const updatedGoals = goals.map(goal => {
+      if (goal.id === id) {
+        const updatedGoal = { ...goal, completed: !goal.completed };
+        
+        // Log the activity
+        logActivity({
+          type: 'goal',
+          action: updatedGoal.completed ? 'completed' : 'uncompleted',
+          target: goal.title,
+          timestamp: Date.now()
+        });
+        
+        return updatedGoal;
+      }
+      return goal;
+    });
+    
+    setGoals(updatedGoals);
+    
+    // Save to localStorage
+    localStorage.setItem('goals', JSON.stringify(updatedGoals));
+  };
+
+  // Display upcoming interviews in a modern card layout
+  const renderUpcomingInterviews = () => {
+    return (
+      <div className="bg-white dark:bg-gray-800 rounded-xl shadow-md overflow-hidden">
+        <div className="p-4 border-b border-gray-200 dark:border-gray-700 flex justify-between items-center">
+          <h2 className="text-xl font-bold text-gray-900 dark:text-white">Upcoming Interviews</h2>
+          <button 
+            className="text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300"
+            onClick={() => navigate('/interviews')}
+          >
+            View All
+          </button>
+        </div>
+        
+        <div className="p-3">
+          {interviews.length === 0 ? (
+            <div className="text-center py-6">
+              <p className="text-gray-500 dark:text-gray-400">No upcoming interviews scheduled</p>
+              <button 
+                className="mt-3 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors duration-300"
+                onClick={() => navigate('/interviews/new')}
+              >
+                Schedule Interview
+              </button>
+            </div>
+          ) : (
+            <div className="space-y-3">
+              {interviews.slice(0, 3).map((interview) => {
+                const interviewDate = new Date(interview.date);
+                const isToday = new Date().toDateString() === interviewDate.toDateString();
+                
+                return (
+                  <motion.div 
+                    key={interview.id}
+                    className="p-3 rounded-lg border border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-750 transition-colors duration-150"
+                  >
+                    <div className="flex justify-between items-start">
+                      <div>
+                        <h3 className="font-medium text-gray-900 dark:text-white">{interview.position}</h3>
+                        <p className="text-gray-600 dark:text-gray-400">{interview.company}</p>
+                      </div>
+                      <div className="text-right">
+                        <div className={`text-sm font-medium mb-1 ${isToday ? 'text-red-600 dark:text-red-400' : 'text-gray-600 dark:text-gray-400'}`}>
+                          {isToday ? 'Today' : interviewDate.toLocaleDateString()}
+                        </div>
+                        <div className="text-sm text-gray-500 dark:text-gray-500">
+                          {interviewDate.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                        </div>
+                      </div>
+                    </div>
+                    {interview.notes && (
+                      <div className="mt-2 text-sm text-gray-600 dark:text-gray-400 bg-gray-50 dark:bg-gray-700 p-2 rounded">
+                        <div className="font-medium mb-1">Notes:</div>
+                        {interview.notes}
+                      </div>
+                    )}
+                    <div className="mt-3 flex justify-end space-x-2">
+                      <button 
+                        className="text-sm px-3 py-1 bg-blue-100 text-blue-600 dark:bg-blue-900 dark:text-blue-300 rounded-md hover:bg-blue-200 dark:hover:bg-blue-800"
+                        onClick={() => navigate('/preparation')}
+                      >
+                        Prepare
+                      </button>
+                      <button 
+                        className="text-sm px-3 py-1 bg-gray-100 text-gray-600 dark:bg-gray-700 dark:text-gray-300 rounded-md hover:bg-gray-200 dark:hover:bg-gray-600"
+                        onClick={() => navigate(`/interviews/${interview.id}/edit`)}
+                      >
+                        Edit
+                      </button>
+                    </div>
+                  </motion.div>
+                );
+              })}
+            </div>
+          )}
+        </div>
+      </div>
+    );
+  };
+
+  // Function to display the recent activities
+  const renderRecentActivities = () => {
+    return (
+      <motion.div 
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.5, delay: 0.6 }}
+        className="bg-white dark:bg-gray-800 rounded-xl p-6 shadow-lg"
+      >
+        <div className="flex justify-between items-center mb-6">
+          <h2 className="text-xl font-bold text-gray-900 dark:text-white">Recent Activity</h2>
+          <button 
+            className="text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300 flex items-center"
+            onClick={() => navigate('/activities')}
+          >
+            <span className="mr-1">View All</span>
+            <ChevronRight className="w-4 h-4" />
+          </button>
+        </div>
+        
+        <div className="relative">
+          {/* Timeline line */}
+          <div className="absolute left-5 top-0 bottom-0 w-0.5 bg-gray-200 dark:bg-gray-700"></div>
+          
+          {/* Activity items */}
+          <div className="space-y-6 ml-2">
+            {activities.length === 0 ? (
+              <div className="text-center py-6 pl-8">
+                <p className="text-gray-500 dark:text-gray-400">No recent activities</p>
+              </div>
+            ) : (
+              activities.slice(0, 5).map((activity: any, index) => {
+                // Convert timestamp to Date object, handling both string and number formats
+                const date = new Date(typeof activity.timestamp === 'string' 
+                  ? activity.timestamp 
+                  : Number(activity.timestamp));
+                const isToday = new Date().toDateString() === date.toDateString();
+                
+                // Icon based on activity type
+                let icon;
+                let bgColor;
+                
+                // Safe type check for activity types
+                const activityType = activity.type || 'default';
+                
+                switch (activityType) {
+                  case 'resume':
+                    icon = <FileText className="h-4 w-4 text-blue-500" />;
+                    bgColor = 'bg-blue-100 dark:bg-blue-900';
+                    break;
+                  case 'application':
+                    icon = <Briefcase className="h-4 w-4 text-purple-500" />;
+                    bgColor = 'bg-purple-100 dark:bg-purple-900';
+                    break;
+                  case 'interview':
+                    icon = <Activity className="h-4 w-4 text-green-500" />;
+                    bgColor = 'bg-green-100 dark:bg-green-900';
+                    break;
+                  case 'goal':
+                    icon = <Target className="h-4 w-4 text-orange-500" />;
+                    bgColor = 'bg-orange-100 dark:bg-orange-900';
+                    break;
+                  default:
+                    icon = <ChevronRight className="h-4 w-4 text-gray-500" />;
+                    bgColor = 'bg-gray-100 dark:bg-gray-700';
+                }
+                
+                return (
+                  <motion.div 
+                    key={index}
+                    initial={{ opacity: 0, x: -10 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    transition={{ duration: 0.3, delay: index * 0.1 }}
+                    className="flex items-start ml-5"
+                  >
+                    <div className={`flex items-center justify-center w-8 h-8 rounded-full ${bgColor} -ml-11 z-10`}>
+                      {icon}
+                    </div>
+                    <div className="ml-4 flex-1">
+                      <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center">
+                        <p className="text-sm font-medium text-gray-900 dark:text-white">
+                          {activity.action} {activity.type} {activity.target && `- ${activity.target}`}
+                        </p>
+                        <span className={`text-xs ${isToday ? 'text-blue-600 dark:text-blue-400' : 'text-gray-500 dark:text-gray-400'} mt-1 sm:mt-0`}>
+                          {isToday 
+                            ? `Today at ${date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}` 
+                            : date.toLocaleDateString([], { month: 'short', day: 'numeric' })}
+                        </span>
+                      </div>
+                      <p className="mt-1 text-sm text-gray-600 dark:text-gray-400">
+                        {getActivityDescription(activity)}
+                      </p>
+                    </div>
+                  </motion.div>
+                );
+              })
+            )}
+          </div>
+        </div>
+      </motion.div>
+    );
+  };
+
+  // Helper function to get a human-readable description of activities
+  const getActivityDescription = (activity: ActivityItem) => {
+    const target = activity.target || '';
+    
+    switch (activity.type) {
+      case 'resume':
+        return `You ${activity.action} your resume ${target ? `'${target}'` : ''}`;
+      case 'application':
+        return `You ${activity.action} a job application ${target ? `for ${target}` : ''}`;
+      case 'interview':
+        return `You ${activity.action} an interview ${target ? `with ${target}` : ''}`;
+      case 'goal':
+        return `You ${activity.action} your goal ${target ? `'${target}'` : ''}`;
+      default:
+        return `You ${activity.action} ${activity.type} ${target}`;
+    }
+  };
+
+  // Function to display goals
+  const renderGoals = () => {
+    return (
+      <motion.div 
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.5, delay: 0.7 }}
+        className="bg-white dark:bg-gray-800 rounded-xl p-6 shadow-lg mb-8 mt-8"
+      >
+        <div className="flex justify-between items-center mb-6">
+          <h2 className="text-xl font-bold text-gray-900 dark:text-white">Goal Tracking</h2>
+          <button
+            onClick={() => setIsAddingGoal(!isAddingGoal)}
+            className="flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors duration-300"
+          >
+            <Plus className="w-4 h-4 mr-2" />
+            Add Goal
+          </button>
+        </div>
+
+        {/* Goal Form */}
+        <AnimatePresence>
+          {isAddingGoal && (
+            <motion.div 
+              initial={{ opacity: 0, height: 0 }}
+              animate={{ opacity: 1, height: 'auto' }}
+              exit={{ opacity: 0, height: 0 }}
+              className="bg-gray-50 dark:bg-gray-700 p-4 rounded-lg mb-6"
+            >
+              <h3 className="font-medium mb-4 text-gray-800 dark:text-gray-200">Add New Goal</h3>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                    Goal Title
+                  </label>
+                  <input
+                    type="text"
+                    value={newGoal.title}
+                    onChange={(e) => setNewGoal({...newGoal, title: e.target.value})}
+                    className="w-full p-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100"
+                    placeholder="e.g., Applications Per Week"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                    Target Number
+                  </label>
+                  <input
+                    type="number"
+                    value={newGoal.target || ''}
+                    onChange={(e) => setNewGoal({...newGoal, target: parseInt(e.target.value) || 0})}
+                    className="w-full p-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100"
+                    placeholder="e.g., 10"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                    Due Date
+                  </label>
+                  <input
+                    type="date"
+                    value={newGoal.dueDate}
+                    onChange={(e) => setNewGoal({...newGoal, dueDate: e.target.value})}
+                    className="w-full p-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100"
+                  />
+                </div>
+              </div>
+              <div className="flex justify-end mt-4 space-x-2">
+                <button
+                  onClick={() => setIsAddingGoal(false)}
+                  className="px-4 py-2 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600 rounded-lg transition-colors duration-300"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={handleGoalSubmit}
+                  className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors duration-300"
+                >
+                  Add Goal
+                </button>
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
+
+        {/* Goals List */}
+        <div className="space-y-4">
+          {goals.length === 0 ? (
+            <p className="text-gray-500 dark:text-gray-400 text-center py-4">
+              No goals set yet. Add a goal to start tracking your job search progress.
+            </p>
+          ) : (
+            goals.map((goal: any) => {
+              const progress = calculateProgress(goal);
+              const isOverdue = new Date(goal.dueDate) < new Date();
+              const isCompleted = goal.completed;
+              const currentValue = goal.current || 0;
+              
+              return (
+                <motion.div 
+                  key={goal.id}
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.3 }}
+                  className={`bg-white dark:bg-gray-800 p-4 rounded-lg shadow-sm border ${
+                    isOverdue && !isCompleted ? 'border-red-300 dark:border-red-700' : 'border-gray-200 dark:border-gray-700'
+                  }`}
+                >
+                  <div className="flex flex-col md:flex-row md:justify-between md:items-center">
+                    <div className="mb-2 md:mb-0">
+                      <h3 className="text-md font-medium text-gray-900 dark:text-white">{goal.title}</h3>
+                      <div className="flex items-center mt-2 md:mt-0">
+                        <span className="text-sm text-gray-600 dark:text-gray-400 mr-2">Due: {new Date(goal.dueDate).toLocaleDateString()}</span>
+                        <button 
+                          onClick={() => toggleGoalCompletion(goal.id)}
+                          className={`mt-0.5 ${
+                            isCompleted ? 'text-green-500 hover:text-green-600' : 'text-gray-400 hover:text-gray-500'
+                          }`}
+                          title="Toggle Goal Status"
+                        >
+                          {isCompleted ? <CheckSquare size={18} /> : <Square size={18} />}
+                        </button>
+                      </div>
+                    </div>
+                    <div className="mt-2">
+                      <div className="flex justify-between items-center text-sm mb-1">
+                        <span className="text-gray-600 dark:text-gray-400">Progress: {currentValue} of {goal.target || 0}</span>
+                        <span className="font-medium text-gray-800 dark:text-gray-200">{progress}%</span>
+                      </div>
+                      <div className="w-full bg-gray-200 dark:bg-gray-600 rounded-full h-2.5">
+                        <div 
+                          className={`h-2.5 rounded-full ${
+                            isCompleted 
+                              ? 'bg-green-500 dark:bg-green-600' 
+                              : isOverdue 
+                                ? 'bg-orange-400 dark:bg-orange-600' 
+                                : 'bg-blue-500 dark:bg-blue-600'
+                          }`}
+                          style={{ width: `${progress}%` }}
+                        ></div>
+                      </div>
+                    </div>
+                  </div>
+                  
+                  <div className="flex items-center justify-between mt-3">
+                    <div className="flex items-center space-x-1">
+                      <button 
+                        onClick={() => updateGoalProgress(goal.id, currentValue - 1)}
+                        className={`mt-0.5 ${
+                          currentValue <= 0 ? 'text-gray-400' : 'text-gray-600 hover:text-gray-700 dark:hover:text-gray-500'
+                        }`}
+                        disabled={currentValue <= 0}
+                      >
+                        <span className="text-xl font-bold">-</span>
+                      </button>
+                      <input
+                        type="number"
+                        value={currentValue}
+                        onChange={(e) => updateGoalProgress(goal.id, parseInt(e.target.value) || 0)}
+                        className="w-16 p-1 text-center border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100"
+                      />
+                      <button
+                        onClick={() => updateGoalProgress(goal.id, currentValue + 1)}
+                        className="p-1 text-gray-600 hover:text-gray-700 dark:hover:text-gray-500"
+                      >
+                        <span className="text-xl font-bold">+</span>
+                      </button>
+                    </div>
+                  </div>
+                </motion.div>
+              );
+            })
+          )}
+        </div>
+      </motion.div>
+    );
+  };
+
+  // Function to calculate progress
+  const calculateProgress = (goal: any) => {
+    const current = goal.current || 0;
+    const target = goal.target || 1; // Prevent division by zero
+    return Math.min(Math.round((current / target) * 100), 100);
+  };
+
+  // Function to update goal progress
+  const updateGoalProgress = (id: string, newValue: number) => {
+    setGoals(prevGoals => 
+      prevGoals.map(goal => {
+        if (goal.id === id) {
+          const updatedGoal = { 
+            ...goal, 
+            current: newValue,
+            completed: newValue >= (goal.target || 0)
+          };
+          return updatedGoal;
+        }
+        return goal;
+      })
+    );
+    
+    // Save updated goals to localStorage
+    const updatedGoals = goals.map(goal => {
+      if (goal.id === id) {
+        return { ...goal, current: newValue, completed: newValue >= (goal.target || 0) };
+      }
+      return goal;
+    });
+    localStorage.setItem('goals', JSON.stringify(updatedGoals));
+    
+    // Log activity
+    const goal = goals.find(g => g.id === id);
+    if (goal) {
+      const activityItem: ActivityItem = {
+        type: 'goal',
+        action: 'updated',
+        target: goal.title,
+        timestamp: new Date().toISOString()
+      };
+      logActivity(activityItem);
+    }
+  };
+
+  // Function to handle clicking outside modal to close it
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (modalRef.current && !modalRef.current.contains(event.target as Node)) {
+        setShowResumeModal(false);
+      }
+    };
+    
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, []);
+
+  // Function to view resume
+  const handleViewResume = (resume: Resume) => {
+    setSelectedResume(resume);
+    setShowResumeModal(true);
+    
+    // Log the activity
+    logActivity({
+      type: 'resume',
+      action: 'viewed',
+      target: resume.name,
+      timestamp: Date.now()
+    });
+  };
+
+  // Function to edit resume in builder
+  const handleEditResume = (resume: Resume) => {
+    // Close modal
+    setShowResumeModal(false);
+    
+    // Log the activity
+    logActivity({
+      type: 'resume',
+      action: 'edited',
+      target: resume.name,
+      timestamp: Date.now()
+    });
+    
+    // Navigate to builder with resume data
+    if (resume.content) {
+      localStorage.setItem('resumeToEdit', resume.content);
+      navigate('/build');
+    }
+  };
+
+  // Render saved resumes in a modern card layout
+  const renderSavedResumes = () => {
+    return (
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.5, delay: 0.4 }}
+        className="bg-white dark:bg-gray-800 rounded-xl shadow-md overflow-hidden"
+      >
+        <div className="p-4 border-b border-gray-200 dark:border-gray-700 flex justify-between items-center">
+          <h2 className="text-xl font-bold text-gray-900 dark:text-white">Saved Resumes</h2>
+          <Link 
+            to="/build"
+            className="text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300 flex items-center"
+          >
+            <Plus className="w-4 h-4 mr-1" />
+            New Resume
+          </Link>
+        </div>
+        
+        <div className="p-3">
+          {resumes.length === 0 ? (
+            <div className="text-center py-6">
+              <p className="text-gray-500 dark:text-gray-400">No resumes saved yet</p>
+              <Link 
+                to="/build"
+                className="mt-3 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors duration-300 inline-flex items-center"
+              >
+                <Plus className="w-4 h-4 mr-2" />
+                Create Resume
+              </Link>
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+              {resumes.map((resume: Resume) => (
+                <motion.div
+                  key={resume.id}
+                  initial={{ opacity: 0, scale: 0.95 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  transition={{ duration: 0.3 }}
+                  className="bg-gray-50 dark:bg-gray-700 p-4 rounded-lg border border-gray-200 dark:border-gray-600 hover:shadow-md transition-all overflow-hidden"
+                >
+                  <div className="flex justify-between mb-2">
+                    <h3 className="font-medium text-gray-900 dark:text-white">{resume.name}</h3>
+                    <div className="text-xs text-gray-500 dark:text-gray-400">
+                      {new Date(resume.lastUpdated).toLocaleDateString()}
+                    </div>
+                  </div>
+                  
+                  <p className="text-sm text-gray-600 dark:text-gray-300 mb-3 truncate">
+                    {resume.jobTitle || 'No job title specified'}
+                  </p>
+                  
+                  <div className="flex justify-end space-x-2">
+                    <button
+                      onClick={() => handleViewResume(resume)}
+                      className="p-1.5 text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-900/30 rounded-md hover:bg-blue-100 dark:hover:bg-blue-800/40 transition-colors"
+                      title="View Resume"
+                    >
+                      <Eye className="w-4 h-4" />
+                    </button>
+                    <button
+                      onClick={() => handleEditResume(resume)}
+                      className="p-1.5 text-green-600 dark:text-green-400 bg-green-50 dark:bg-green-900/30 rounded-md hover:bg-green-100 dark:hover:bg-green-800/40 transition-colors"
+                      title="Edit Resume"
+                    >
+                      <Edit2 className="w-4 h-4" />
+                    </button>
+                  </div>
+                </motion.div>
+              ))}
+            </div>
+          )}
+        </div>
+      </motion.div>
+    );
+  };
+
+  // Render the user stats section
+  const renderStatsSection = () => {
+    return (
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-5 mb-8">
+        <div className="bg-white dark:bg-gray-800 p-5 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700">
+          <h3 className="text-gray-500 dark:text-gray-400 text-sm font-medium mb-2">Resumes Created</h3>
+          <div className="flex items-baseline">
+            <span className="text-2xl font-bold text-gray-900 dark:text-white">
+              {userStats?.resumes_count || resumes.length || 0}
+            </span>
+            <span className="ml-2 text-sm text-gray-500 dark:text-gray-400">total</span>
+          </div>
+        </div>
+
+        <div className="bg-white dark:bg-gray-800 p-5 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700">
+          <h3 className="text-gray-500 dark:text-gray-400 text-sm font-medium mb-2">Job Applications</h3>
+          <div className="flex items-baseline">
+            <span className="text-2xl font-bold text-gray-900 dark:text-white">
+              {userStats?.applications_count || 0}
+            </span>
+            <span className="ml-2 text-sm text-gray-500 dark:text-gray-400">submitted</span>
+          </div>
+        </div>
+
+        <div className="bg-white dark:bg-gray-800 p-5 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700">
+          <h3 className="text-gray-500 dark:text-gray-400 text-sm font-medium mb-2">Interviews</h3>
+          <div className="flex items-baseline">
+            <span className="text-2xl font-bold text-gray-900 dark:text-white">
+              {userStats?.interviews_completed || 0}
+            </span>
+            <span className="ml-2 text-sm text-gray-500 dark:text-gray-400">completed</span>
+          </div>
+        </div>
+
+        <div className="bg-white dark:bg-gray-800 p-5 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700">
+          <h3 className="text-gray-500 dark:text-gray-400 text-sm font-medium mb-2">Job Offers</h3>
+          <div className="flex items-baseline">
+            <span className="text-2xl font-bold text-indigo-600 dark:text-indigo-400">
+              {userStats?.job_offers || 0}
+            </span>
+            <span className="ml-2 text-sm text-gray-500 dark:text-gray-400">received</span>
+          </div>
+        </div>
+      </div>
+    );
+  };
+
+  return (
+    <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
+      {/* Debug loading state */}
+      {/* {console.log("Dashboard render - isLoading:", isLoading)} */}
+
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-white mb-6">Dashboard</h1>
+        
+        {isLoading ? (
+          <div className="flex items-center justify-center h-64">
+            <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500"></div>
+            <p className="ml-3 text-gray-600 dark:text-gray-400">Loading your dashboard...</p>
+          </div>
+        ) : (
+          <>
+            {/* Stats Section */}
+            {renderStatsSection()}
+            
+            {/* Main Content Grid */}
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 mb-8">
+              {/* Column 1: Recent Activity, Goals, and Upcoming Interviews (spans 2 columns on larger screens) */}
+              <div className="lg:col-span-2">
+                {/* Recent Activity */}
+                <div className="mb-8">
+                  {renderRecentActivities()}
+                </div>
+                
+                {renderGoals()}
+                
+                {/* Upcoming Interviews */}
+                <div className="mt-8">
+                  {renderUpcomingInterviews()}
+                </div>
+              </div>
+              
+              {/* Column 2: Quick Actions */}
+              <div className="space-y-8">
+                {/* Quick Actions */}
+                <motion.div
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.5, delay: 0.5 }}
+                  className="bg-white dark:bg-gray-800 rounded-xl shadow-sm p-6 border border-gray-100 dark:border-gray-700"
+                >
+                  <div className="flex items-center mb-6">
+                    <div className="w-8 h-8 rounded-full bg-indigo-100 dark:bg-indigo-900/30 flex items-center justify-center mr-3">
+                      <Briefcase className="w-4 h-4 text-indigo-600 dark:text-indigo-400" />
+                    </div>
+                    <h2 className="text-xl font-bold text-gray-900 dark:text-white">Quick Actions</h2>
+                  </div>
+                  
+                  <div className="space-y-3">
+                    <Link
+                      to="/job-tracker"
+                      className="flex items-center p-3 bg-gray-50 dark:bg-gray-700 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-600 transition-colors duration-300 border border-gray-100 dark:border-gray-600"
+                    >
+                      <div className="p-2 bg-purple-100 dark:bg-purple-900 rounded-lg mr-3">
+                        <Briefcase className="w-5 h-5 text-purple-600 dark:text-purple-400" />
+                      </div>
+                      <span className="text-gray-800 dark:text-gray-200">Track Applications</span>
+                    </Link>
+                    <Link
+                      to="/preparation"
+                      className="flex items-center p-3 bg-gray-50 dark:bg-gray-700 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-600 transition-colors duration-300 border border-gray-100 dark:border-gray-600"
+                    >
+                      <div className="p-2 bg-green-100 dark:bg-green-900 rounded-lg mr-3">
+                        <Target className="w-5 h-5 text-green-600 dark:text-green-400" />
+                      </div>
+                      <span className="text-gray-800 dark:text-gray-200">Practice Interview</span>
+                    </Link>
+                    <Link 
+                      to="/build"
+                      className="flex items-center mt-2 text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300"
+                    >
+                      <Plus className="w-4 h-4 mr-2" />
+                      Create New Resume
+                    </Link>
+                  </div>
+                </motion.div>
+                
+                {/* Saved Resumes */}
+                <div className="mt-8">
+                  {renderSavedResumes()}
+                </div>
+              </div>
+            </div>
+          </>
+        )}
+      </div>
+      
+      {/* Resume View Modal */}
+      <AnimatePresence>
+        {showResumeModal && selectedResume && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+            <motion.div 
+              ref={modalRef}
+              initial={{ opacity: 0, scale: 0.9 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.9 }}
+              className="bg-white dark:bg-gray-800 rounded-xl shadow-xl max-w-3xl w-full max-h-[80vh] overflow-hidden flex flex-col"
+            >
+              <div className="p-4 border-b border-gray-200 dark:border-gray-700 flex justify-between items-center">
+                <h2 className="text-xl font-bold text-gray-900 dark:text-white">
+                  {selectedResume.name}
+                </h2>
+                <button 
+                  className="p-1 text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200"
+                  onClick={() => setShowResumeModal(false)}
+                >
+                  <X className="w-5 h-5" />
+                </button>
+              </div>
+              
+              <div className="flex-1 overflow-auto p-4">
+                <div className="mb-4">
+                  <p className="text-sm font-medium text-gray-500 dark:text-gray-400">Job Title</p>
+                  <p className="text-gray-900 dark:text-white">{selectedResume.jobTitle || 'No job title specified'}</p>
+                </div>
+                
+                <div className="mb-4">
+                  <p className="text-sm font-medium text-gray-500 dark:text-gray-400">Last Updated</p>
+                  <p className="text-gray-900 dark:text-white">{new Date(selectedResume.lastUpdated).toLocaleString()}</p>
+                </div>
+                
+                {selectedResume.content && (
+                  <div>
+                    <p className="text-sm font-medium text-gray-500 dark:text-gray-400 mb-2">Preview</p>
+                    <div className="bg-gray-50 dark:bg-gray-700 p-4 rounded-lg border border-gray-200 dark:border-gray-600 max-h-[300px] overflow-auto">
+                      <pre className="text-xs whitespace-pre-wrap text-gray-800 dark:text-gray-200 font-mono">
+                        {JSON.stringify(JSON.parse(selectedResume.content), null, 2)}
+                      </pre>
+                    </div>
+                  </div>
+                )}
+              </div>
+              
+              <div className="p-4 border-t border-gray-200 dark:border-gray-700 flex justify-end space-x-3">
+                <button
+                  onClick={() => setShowResumeModal(false)}
+                  className="px-4 py-2 text-gray-700 dark:text-gray-300 border border-gray-300 dark:border-gray-600 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
+                >
+                  Close
+                </button>
+                <button
+                  onClick={() => handleEditResume(selectedResume)}
+                  className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors flex items-center"
+                >
+                  <Edit2 className="w-4 h-4 mr-2" />
+                  Edit in Builder
+                </button>
+                <a 
+                  href={`/resume/${selectedResume.id}`} 
+                  target="_blank" 
+                  rel="noopener noreferrer"
+                  className="px-4 py-2 bg-gray-100 dark:bg-gray-700 text-gray-800 dark:text-gray-200 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors flex items-center"
+                >
+                  <ExternalLink className="w-4 h-4 mr-2" />
+                  Open Full View
+                </a>
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
+    </div>
+  );
+}

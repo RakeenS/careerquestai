@@ -1,0 +1,134 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+body {
+  font-family: 'Inter', sans-serif;
+}
+
+.ql-editor {
+  min-height: 200px;
+}
+
+@keyframes blob {
+  0% {
+    transform: translate(0px, 0px) scale(1);
+  }
+  33% {
+    transform: translate(30px, -50px) scale(1.1);
+  }
+  66% {
+    transform: translate(-20px, 20px) scale(0.9);
+  }
+  100% {
+    transform: translate(0px, 0px) scale(1);
+  }
+}
+
+.animate-blob {
+  animation: blob 7s infinite;
+}
+
+.animation-delay-2000 {
+  animation-delay: 2s;
+}
+
+.animation-delay-4000 {
+  animation-delay: 4s;
+}
+
+/* Resume Builder Styles */
+.resume-section {
+  @apply bg-white dark:bg-gray-800 rounded-xl shadow-lg p-6 transition-all duration-300 hover:shadow-xl;
+}
+
+.resume-input {
+  @apply w-full p-3 border rounded-lg bg-white dark:bg-gray-700 text-gray-800 dark:text-gray-200 focus:ring-2 focus:ring-blue-500 transition-all duration-300;
+}
+
+/* Bullet point styles for both preview and PDF */
+.bullet-points ul,
+.printable-resume ul,
+.resume-preview ul {
+  list-style-position: outside !important;
+  padding-left: 1.5em !important;
+  margin-left: 0.5em !important;
+  margin-bottom: 0.5em !important;
+}
+
+.bullet-points li,
+.printable-resume li,
+.resume-preview li {
+  display: list-item !important;
+  margin-bottom: 0.25em !important;
+}
+
+.bullet-points ul li,
+.printable-resume ul li,
+.resume-preview ul li {
+  list-style-type: disc !important;
+}
+
+/* For print and PDF generation, enforce bullet points */
+@media print {
+  ul {
+    list-style-position: outside !important;
+    padding-left: 1.5em !important;
+    margin-left: 0.5em !important;
+  }
+  
+  li {
+    display: list-item !important;
+    margin-bottom: 0.25em !important;
+  }
+  
+  ul li {
+    list-style-type: disc !important;
+  }
+}
+
+.resume-button {
+  @apply flex items-center px-4 py-2 rounded-lg transition-all duration-300 font-medium;
+}
+
+.resume-button-primary {
+  @apply resume-button bg-blue-600 text-white hover:bg-blue-700;
+}
+
+.resume-button-secondary {
+  @apply resume-button bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-300 dark:hover:bg-gray-600;
+}
+
+.resume-button-danger {
+  @apply resume-button bg-red-500 text-white hover:bg-red-600;
+}
+
+.resume-button-success {
+  @apply resume-button bg-green-500 text-white hover:bg-green-600;
+}
+
+.section-title {
+  @apply text-2xl font-semibold mb-4 flex items-center cursor-pointer text-gray-800 dark:text-gray-200;
+}
+
+.section-content {
+  @apply space-y-4 transition-all duration-300;
+}
+
+.template-card {
+  @apply p-4 rounded-lg border-2 transition-all duration-200 cursor-pointer hover:shadow-lg;
+}
+
+.template-card-selected {
+  @apply border-blue-500 bg-blue-50 dark:bg-blue-900/30;
+}
+
+.template-card-unselected {
+  @apply border-gray-200 dark:border-gray-700 hover:border-blue-300;
+}
+
+.preview-container {
+  @apply border border-gray-200 dark:border-gray-700 rounded-lg p-4 overflow-auto max-h-[calc(100vh-8rem)] bg-white dark:bg-gray-800 shadow-md transition-all duration-300 hover:shadow-lg;
+}

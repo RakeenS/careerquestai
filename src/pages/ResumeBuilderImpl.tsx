@@ -1,0 +1,2340 @@
+import React, { useState, useRef, useEffect } from 'react';
+import { supabase } from '../lib/supabaseClient';
+import { updateUserStats } from '../lib/supabaseStorage';
+import { defaultResumeData } from '../lib/resume-data';
+import { motion, AnimatePresence } from 'framer-motion';
+import { Download, Eye, Settings2, Palette, Check, ChevronDown, ChevronUp, PlusCircle, Trash2, Loader, Wand2, AlertCircle, X } from 'lucide-react';
+import { Document, Page, Text, View, StyleSheet, pdf } from '@react-pdf/renderer';
+import { getOpenAIClient } from '../lib/openai';
+import PremiumPlanModal from '../components/PremiumPlanModal';
+import { useSubscription } from '../hooks/useSubscription';
+import ReactQuill from 'react-quill';
+import 'react-quill/dist/quill.snow.css';
+import '../styles/quill-custom.css';
+
+// Function to ensure bullet points are visible in the preview
+const ensureBulletPoints = (html: string) => {
+  if (!html) return '';
+  
+  // Add a class to all list elements to ensure they render properly in the preview
+  return html
+    .replace(/<ul>/g, '<ul class="preview-list">')
+    .replace(/<li>/g, '<li class="preview-list-item">');
+};
+
+// Main implementation of the Resume Builder
+const ResumeBuilderImpl = () => {
+  // Function to check Supabase authentication status
+  const getInitialLoginState = () => {
+    // Default to false initially, will be updated by the useEffect
+    return false;
+  };
+
+  const [resumeData, setResumeData] = useState(defaultResumeData);
+  const [theme, setTheme] = useState({
+    primaryColor: "#0ea5e9",
+    secondaryColor: "#f97316",
+    fontPrimary: "Inter",
+    fontSecondary: "Inter",
+    spacing: "normal",
+    layout: "standard",
+  });
+  const [activeTab, setActiveTab] = useState<'content' | 'customize'>('content');
+  const [isGeneratingPdf, setIsGeneratingPdf] = useState(false);
+  const [expandedSections, setExpandedSections] = useState<string[]>(['personal']);
+  const [customSections, setCustomSections] = useState<{id: string; title: string; fields: {id: string; name: string; value: string}[]}[]>([]);
+  const [visibleSections, setVisibleSections] = useState<string[]>(['personal', 'experience']);
+  const [isOptimizing, setIsOptimizing] = useState<{[key: string]: boolean}>({});
+  const [isRegenerating, setIsRegenerating] = useState<boolean>(false);
+  const [optimizationError, setOptimizationError] = useState<string | null>(null);
+  const [aiPreview, setAiPreview] = useState<{section: string, content: string} | null>(null);
+  // State variables for UI control
+  const [showSectionMenu, setShowSectionMenu] = useState<boolean>(false);
+  const [isAnalyzingResume, setIsAnalyzingResume] = useState<boolean>(false);
+  const [isSavingResume, setIsSavingResume] = useState<boolean>(false);
+  const [resumeAnalysis, setResumeAnalysis] = useState<{score: number; feedback: string; tips: string[]} | null>(null);
+  const [showAnalysisModal, setShowAnalysisModal] = useState<boolean>(false);
+  const [isUserLoggedIn, setIsUserLoggedIn] = useState<boolean>(getInitialLoginState());
+  const [showPremiumModal, setShowPremiumModal] = useState<boolean>(false);
+  const [lastRequestedFeature, setLastRequestedFeature] = useState<string>('');
+  const resumeRef = useRef<HTMLDivElement>(null);
+  
+  // Effect to check Supabase authentication status
+  // Check for resumeToEdit in localStorage when component mounts
+  useEffect(() => {
+    try {
+      // Check if there's a resume to edit in localStorage
+      const resumeToEdit = localStorage.getItem('resumeToEdit');
+      
+      if (resumeToEdit) {
+        console.log('Found saved resume in localStorage. Loading into Resume Builder...');
+        
+        // Parse the saved resume data
+        const parsedResume = JSON.parse(resumeToEdit);
+        
+        // Update the resume data state with the saved resume
+        if (parsedResume) {
+          setResumeData(parsedResume);
+          
+          // If the resume has custom sections, load them too
+          if (parsedResume.customSections && Array.isArray(parsedResume.customSections)) {
+            setCustomSections(parsedResume.customSections);
+          }
+          
+          // Add any visible sections
+          if (parsedResume.sectionOrder && Array.isArray(parsedResume.sectionOrder)) {
+            setVisibleSections(parsedResume.sectionOrder);
+          }
+          
+          console.log('Successfully loaded saved resume data');
+        }
+        
+        // Clear the localStorage item to prevent reloading on subsequent visits
+        localStorage.removeItem('resumeToEdit');
+      }
+    } catch (error) {
+      console.error('Error loading resume from localStorage:', error);
+    }
+  }, []);
+
+  useEffect(() => {
+    // Add custom event listener for testing
+    const handleCustomLogin = () => {
+      console.log('Custom login event received');
+      setIsUserLoggedIn(true);
+    };
+    
+    window.addEventListener('user-logged-in', handleCustomLogin);
+    
+    // Check initial auth state
+    const checkAuthState = async () => {
+      try {
+        // Get the current session from Supabase
+        const { data: { session } } = await supabase.auth.getSession();
+        
+        // Update login state based on whether a session exists
+        const isLoggedIn = !!session;
+        console.log('Supabase auth check - User logged in:', isLoggedIn);
+        setIsUserLoggedIn(isLoggedIn);
+        
+        // If there's a pending operation and user is now logged in, retry it
+        if (isLoggedIn) {
+          const pendingAnalysis = window.sessionStorage.getItem('pendingAnalysis');
+          const pendingSection = window.sessionStorage.getItem('pendingOptimizeSection');
+          const pendingContent = window.sessionStorage.getItem('pendingOptimizeContent');
+          
+          // Clear storage regardless of whether we use it
+          window.sessionStorage.removeItem('pendingAnalysis');
+          window.sessionStorage.removeItem('pendingOptimizeSection');
+          window.sessionStorage.removeItem('pendingOptimizeContent');
+          
+          // Small delay to ensure state is fully updated
+          setTimeout(() => {
+            if (pendingAnalysis === 'true') {
+              analyzeResume();
+            } else if (pendingSection && pendingContent) {
+              optimizeSection(pendingSection, pendingContent);
+            }
+          }, 500);
+        }
+      } catch (error) {
+        console.error('Error checking auth state:', error);
+        setIsUserLoggedIn(false);
+      }
+    };
+    
+    checkAuthState();
+    
+    // Set up auth state listener
+    const { data: authListener } = supabase.auth.onAuthStateChange((event, session) => {
+      const isLoggedIn = !!session;
+      console.log('Auth state changed:', event, 'Logged in:', isLoggedIn);
+      setIsUserLoggedIn(isLoggedIn);
+    });
+    
+    return () => {
+      authListener.subscription.unsubscribe();
+      window.removeEventListener('user-logged-in', handleCustomLogin);
+    };
+  }, []);
+
+  // Toggle section expansion
+  const toggleSection = (section: string) => {
+    setExpandedSections(prev => 
+      prev.includes(section) 
+        ? prev.filter(s => s !== section) 
+        : [...prev, section]
+    );
+  };
+
+  // Add a new custom section
+  const addCustomSection = () => {
+    const newSectionId = `custom-${crypto.randomUUID()}`;
+    const newCustomSection = {
+      id: newSectionId,
+      title: "Custom Section",
+      fields: [
+        {id: crypto.randomUUID(), name: "Title", value: ""}
+      ]
+    };
+    
+    setCustomSections(prev => [...prev, newCustomSection]);
+    setExpandedSections(prev => [...prev, newSectionId]);
+    setVisibleSections(prev => [...prev, newSectionId]);
+    setShowSectionMenu(false);
+  };
+  
+  // Add a new field to a custom section
+  const addFieldToCustomSection = (sectionId: string) => {
+    setCustomSections(prev => prev.map(section => {
+      if (section.id === sectionId) {
+        return {
+          ...section,
+          fields: [...section.fields, {id: crypto.randomUUID(), name: "Field", value: ""}]
+        };
+      }
+      return section;
+    }));
+  };
+  
+  // Update custom section title
+  const updateCustomSectionTitle = (sectionId: string, newTitle: string) => {
+    setCustomSections(prev => prev.map(section => {
+      if (section.id === sectionId) {
+        return {...section, title: newTitle};
+      }
+      return section;
+    }));
+  };
+  
+  // Update custom section field
+  const updateCustomSectionField = (sectionId: string, fieldId: string, updates: {name?: string, value?: string}) => {
+    setCustomSections(prev => prev.map(section => {
+      if (section.id === sectionId) {
+        return {
+          ...section,
+          fields: section.fields.map(field => {
+            if (field.id === fieldId) {
+              return {...field, ...updates};
+            }
+            return field;
+          })
+        };
+      }
+      return section;
+    }));
+  };
+  
+  // Delete a field from a custom section
+  const deleteFieldFromCustomSection = (sectionId: string, fieldId: string) => {
+    setCustomSections(prev => prev.map(section => {
+      if (section.id === sectionId) {
+        return {
+          ...section,
+          fields: section.fields.filter(field => field.id !== fieldId)
+        };
+      }
+      return section;
+    }));
+  };
+  
+  // Delete a custom section
+  const deleteCustomSection = (sectionId: string) => {
+    setCustomSections(prev => prev.filter(section => section.id !== sectionId));
+    setExpandedSections(prev => prev.filter(section => section !== sectionId));
+    setVisibleSections(prev => prev.filter(section => section !== sectionId));
+  };
+
+  // We'll create placeholder functions that would normally be implemented
+  const updateResumeData = (newData: any) => {
+    setResumeData((prev: any) => ({ ...prev, ...newData }));
+  };
+
+  const updateSection = (sectionName: string, sectionData: any) => {
+    setResumeData((prev: any) => ({
+      ...prev,
+      [sectionName]: sectionData,
+    }));
+  };
+
+  // We've replaced direct usage of this helper with inline implementations
+  // for better reliability with React's state management
+
+  // AI optimization functionality
+  const optimizeSection = async (section: string, sectionContent: string) => {
+    try {
+      // CRITICAL FIX: Check authentication directly with Supabase
+      const { data: { session } } = await supabase.auth.getSession();
+      const isAuthenticated = !!session;
+      console.log(`Optimization requested. Supabase auth check - User authenticated: ${isAuthenticated}`);
+      
+      // Make sure React state matches Supabase auth state
+      if (isAuthenticated !== isUserLoggedIn) {
+        console.log('Fixing auth state discrepancy');
+        setIsUserLoggedIn(isAuthenticated);
+      }
+      
+      // Check both authentication and subscription status
+      if (!isAuthenticated || !subscriptionStatus.isPremium) {
+        // Store the section and content for later retry
+        window.sessionStorage.setItem('pendingOptimizeSection', section);
+        window.sessionStorage.setItem('pendingOptimizeContent', sectionContent);
+        setLastRequestedFeature('optimize');
+        setShowPremiumModal(true);
+        return; // Exit if user doesn't have access or an active subscription
+      }
+    } catch (error) {
+      console.error('Error checking authentication:', error);
+      // If we can't verify auth, assume not logged in and show modal
+      setLastRequestedFeature('optimize');
+      setShowPremiumModal(true);
+      return;
+    }
+    
+    setIsOptimizing(prev => ({ ...prev, [section]: true }));
+    setOptimizationError(null);
+
+    try {
+      // Determine if user is on a mobile device
+      const isMobile = /android|webos|iphone|ipad|ipod|blackberry|iemobile|opera mini/i.test(
+        navigator.userAgent.toLowerCase()
+      );
+
+      console.log(`Optimizing ${section} section, detected mobile: ${isMobile}`);
+
+      // For experience sections with rich text, strip HTML tags for the API call
+      const plainTextContent = section.startsWith('experience-') || section === 'summary' 
+        ? sectionContent.replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim()
+        : sectionContent;
+
+      let optimizedContent = '';
+      
+      try {
+        // Get the OpenAI client
+        const openaiClient = await getOpenAIClient();
+
+        // Create the appropriate prompt based on section
+        const prompt = section.startsWith('experience-')
+          ? `Rewrite this work experience for a professional resume using bullet points. Each bullet point must:
+             1. Start with a strong action verb
+             2. Include specific quantifiable achievements (with numbers/percentages)
+             3. Highlight relevant skills and impact
+             
+             Format your response with HTML bullet points (<ul><li>point 1</li><li>point 2</li></ul>).
+             Include 3-5 bullet points that demonstrate accomplishments and results.
+             Use metrics and numbers (like percentages, dollar amounts, quantities) to quantify achievements.
+             
+             DO NOT include any note about the metrics being examples in your response.
+             
+             Original description to optimize:
+             ${plainTextContent}`
+          : `Write a concise and impactful professional summary for a resume. DO NOT include the title "Professional Summary:" in your response.
+             
+             The summary should:
+             1. Be 3-5 sentences
+             2. Highlight key skills and experience
+             3. Be written in a professional tone
+             4. Focus on achievements and value proposition
+             
+             Here is the original content to optimize:
+             ${plainTextContent}`;
+
+        // Make the API call
+        const response = await openaiClient.chat.completions.create({
+          model: "gpt-3.5-turbo", // Using 3.5 for faster responses
+          messages: [
+            {
+              role: "system",
+              content: "You are a professional resume writer. Return content with HTML formatting when appropriate."
+            },
+            {
+              role: "user",
+              content: prompt
+            }
+          ],
+        });
+
+        optimizedContent = response.choices[0].message.content || '';
+      } catch (error) {
+        console.error('Error with OpenAI API:', error);
+        throw new Error('Failed to generate optimized content. Please try again.');
+      }
+
+      if (!optimizedContent) {
+        throw new Error('Could not generate optimized content');
+      }
+
+      // Process optimized content to remove redundant headings for summary section
+      if (section === 'summary') {
+        // Remove "Professional Summary:" prefix if present
+        optimizedContent = optimizedContent.replace(/^(professional\s+summary:?\s*)/i, '');
+      }
+
+      console.log('Optimization successful!');
+
+      // Show AI preview instead of directly updating
+      setAiPreview({ section, content: optimizedContent });
+    } catch (error) {
+      console.error(`Error optimizing ${section}:`, error);
+      setOptimizationError(`Failed to optimize ${section}. ${error instanceof Error ? error.message : "Please try again."}`);
+    } finally {
+      setIsOptimizing(prev => ({ ...prev, [section]: false }));
+    }
+  };
+
+  // Apply the AI optimization
+  const applyAiOptimization = () => {
+    if (aiPreview) {
+      // Extract plain text from HTML content for experience descriptions
+      let processedContent = aiPreview.content;
+      
+      // Remove redundant "Professional Summary:" prefix if present
+      if (aiPreview.section === 'summary') {
+        processedContent = processedContent.replace(/^(professional\s+summary:?\s*)/i, '');
+      }
+      
+      if (aiPreview.section === 'summary') {
+        updateSection('personalInfo', {
+          ...resumeData.personalInfo,
+          summary: processedContent
+        });
+      } else if (aiPreview.section.startsWith('experience-')) {
+        const experienceIndex = parseInt(aiPreview.section.split('-')[1]);
+        const newExperience = [...resumeData.experience];
+        newExperience[experienceIndex] = {
+          ...newExperience[experienceIndex],
+          description: processedContent
+        };
+        updateSection('experience', newExperience);
+      }
+      setAiPreview(null);
+    }
+  };
+
+  // Cancel the AI optimization
+  const cancelAiOptimization = () => {
+    setAiPreview(null);
+  };
+  
+  // Helper function to get color based on score
+  const getScoreColor = (score: number): string => {
+    if (score >= 90) return '#10b981'; // Emerald/green for excellent
+    if (score >= 70) return '#0ea5e9'; // Blue for good
+    if (score >= 50) return '#f59e0b'; // Amber for average
+    return '#ef4444'; // Red for poor
+  };
+
+  // Analyze resume for ATS compatibility and provide feedback
+  // Get subscription status using the custom hook
+  const subscriptionStatus = useSubscription();
+
+  const analyzeResume = async () => {
+    try {
+      // CRITICAL FIX: Check authentication directly with Supabase
+      const { data: { session } } = await supabase.auth.getSession();
+      const isAuthenticated = !!session;
+      console.log(`Resume analysis requested. Supabase auth check - User authenticated: ${isAuthenticated}`);
+      
+      // Make sure React state matches Supabase auth state
+      if (isAuthenticated !== isUserLoggedIn) {
+        console.log('Fixing auth state discrepancy');
+        setIsUserLoggedIn(isAuthenticated);
+      }
+      
+      // Check both authentication and subscription status
+      if (!isAuthenticated || !subscriptionStatus.isPremium) {
+        // Remember that we wanted to do an analysis for later retry
+        window.sessionStorage.setItem('pendingAnalysis', 'true');
+        setLastRequestedFeature('analyze');
+        setShowPremiumModal(true);
+        return; // Exit if user doesn't have access or an active subscription
+      }
+    } catch (error) {
+      console.error('Error checking authentication:', error);
+      // If we can't verify auth, assume not logged in and show modal
+      setLastRequestedFeature('analyze');
+      setShowPremiumModal(true);
+      return;
+    }
+    
+    try {
+      setIsAnalyzingResume(true);
+      
+      // Helper function to strip HTML tags from content
+      const stripHtml = (html: string) => {
+        if (!html) return '';
+        const doc = new DOMParser().parseFromString(html, 'text/html');
+        return doc.body.textContent || '';
+      };
+      
+      // Extract resume content as plaintext
+      const personalInfo = resumeData.personalInfo;
+      
+      // Get the job title for career-specific advice
+      const jobTitle = personalInfo.title || 'Professional';
+      
+      // Clean the summary HTML
+      const cleanSummary = stripHtml(personalInfo.summary || '');
+      
+      // Process experience sections with HTML content properly stripped
+      const experienceSections = resumeData.experience.map((exp, i) => {
+        const cleanDescription = stripHtml(exp.description || '');
+        return `Experience ${i+1}:\n- Title: ${exp.title}\n- Company: ${exp.company}\n- Location: ${exp.location}\n- Period: ${exp.startDate} - ${exp.current ? 'Present' : exp.endDate}\n- Description: ${cleanDescription}`;
+      }).join('\n\n');
+      
+      // Add education sections if visible, cleaning HTML
+      const educationSections = visibleSections.includes('education') ? 
+        resumeData.education.map((edu, i) => {
+          const cleanDescription = stripHtml(edu.description || '');
+          return `Education ${i+1}:\n- Degree: ${edu.degree}\n- Institution: ${edu.institution}\n- Location: ${edu.location}\n- Period: ${edu.startDate} - ${edu.current ? 'Present' : edu.endDate}\n- Description: ${cleanDescription}`;
+        }).join('\n\n') : '';
+      
+      // Combine all resume content
+      const resumeContent = `
+        RESUME CONTENT\n\n
+        Personal Information:\n
+        - Name: ${personalInfo.fullName}\n
+        - Title: ${jobTitle}\n
+        - Email: ${personalInfo.email}\n
+        - Phone: ${personalInfo.phone}\n
+        - Location: ${personalInfo.location}\n
+        - Website: ${personalInfo.website}\n\n
+        Professional Summary:\n
+        ${cleanSummary}\n\n
+        ${experienceSections}\n\n
+        ${educationSections ? educationSections : ''}
+      `;
+      
+      // Get OpenAI client
+      const openaiClient = await getOpenAIClient();
+      
+      // Call OpenAI API to analyze the resume with career-specific context
+      const response = await openaiClient.chat.completions.create({
+        model: "gpt-3.5-turbo",
+        messages: [
+          {
+            role: "system",
+            content: `You are an expert ATS (Applicant Tracking System) resume analyzer and career coach specializing in ${jobTitle} roles. 
+            You will evaluate this resume for:
+            1. ATS compatibility and keyword optimization
+            2. Industry-specific requirements for ${jobTitle} positions
+            3. Career progression and achievement highlighting
+            4. Overall effectiveness and competitiveness in the current job market
+            
+            Provide specific, actionable feedback that is directly relevant to the ${jobTitle} field.`
+          },
+          {
+            role: "user",
+            content: `Please analyze this resume for a ${jobTitle} position. I need:
+            1. An overall ATS compatibility score (1-100)
+            2. General feedback about the resume's effectiveness for ATS systems and ${jobTitle} positions specifically
+            3. A list of 4-5 specific improvement suggestions tailored to this career field to make the resume more competitive
+            
+            Here's the resume content:
+            
+            ${resumeContent}`
+          }
+        ],
+        temperature: 0.7,
+        max_tokens: 800
+      });
+      
+      // Parse and structure the analysis response
+      const analysisText = response.choices[0]?.message?.content || '';
+      
+      // Extract score using regex
+      const scoreMatch = analysisText.match(/(\d{1,3})\s*\/\s*100|score[:\s]*([\d]{1,3})/i);
+      const score = scoreMatch ? parseInt(scoreMatch[1] || scoreMatch[2]) : 70; // Default to 70 if no score found
+      
+      // Extract general feedback
+      let feedback = "";
+      const feedbackMatch = analysisText.match(/general feedback:?\s*([\s\S]*?)(?=specific|improvement|suggest|\d\.\s|$)/i);
+      if (feedbackMatch && feedbackMatch[1]) {
+        feedback = feedbackMatch[1].trim();
+      } else {
+        // Fallback - use first paragraph if structured feedback not found
+        const paragraphs = analysisText.split('\n\n');
+        feedback = paragraphs[0];
+      }
+      
+      // Extract improvement tips
+      const tips: string[] = [];
+      const tipsSection = analysisText.match(/(?:specific improvements|suggestions|tips|recommendations):?\s*([\s\S]*?)(?=$)/i);
+      
+      if (tipsSection && tipsSection[1]) {
+        // Look for numbered or bulleted list items
+        const listItems = tipsSection[1].match(/(?:\d+\.|-|\*)\s*([^\n]+)/g);
+        if (listItems) {
+          tips.push(...listItems.map((item: string) => item.replace(/^(?:\d+\.|-|\*)\s*/, '').trim()));
+        }
+      }
+      
+      // If no tips were extracted using the structured approach, try to extract numbered items from the full text
+      if (tips.length === 0) {
+        const numListItems = analysisText.match(/\d+\.\s*([^\n]+)/g);
+        if (numListItems) {
+          tips.push(...numListItems.map((item: string) => item.trim()));
+        }
+      }
+      
+      // Fallback if still no tips - now more career-specific
+      if (tips.length === 0) {
+        tips.push(
+          `Add more ${jobTitle}-specific technical skills and keywords to your resume`,
+          `Ensure your job titles align with standard titles in the ${jobTitle} field`,
+          "Quantify achievements with numbers and metrics relevant to your industry",
+          "Use a simple, ATS-friendly format without complex tables or graphics",
+          `Highlight specific projects or achievements most valued in the ${jobTitle} field`
+        );
+      }
+      
+      // Set the analysis results
+      setResumeAnalysis({
+        score,
+        feedback,
+        tips: tips.slice(0, 5) // Limit to 5 tips
+      });
+      
+      // Show the analysis modal
+      setShowAnalysisModal(true);
+    } catch (error) {
+      console.error('Error analyzing resume:', error);
+      setOptimizationError('Failed to analyze resume. Please try again.');
+    } finally {
+      setIsAnalyzingResume(false);
+    }
+  };
+
+  // Regenerate the AI optimization
+  const regenerateAiOptimization = async () => {
+    if (aiPreview) {
+      setIsRegenerating(true);
+      try {
+        if (aiPreview.section === 'summary') {
+          await optimizeSection(aiPreview.section, resumeData.personalInfo.summary || '');
+        } else if (aiPreview.section.startsWith('experience-')) {
+          const experienceIndex = parseInt(aiPreview.section.split('-')[1]);
+          if (experienceIndex >= 0 && experienceIndex < resumeData.experience.length) {
+            await optimizeSection(aiPreview.section, resumeData.experience[experienceIndex].description || '');
+          }
+        }
+      } catch (error) {
+        console.error('Error regenerating optimization:', error);
+        setOptimizationError('Failed to regenerate optimization. Please try again.');
+      } finally {
+        setIsRegenerating(false);
+      }
+    }
+  };
+  
+  // Regeneration is handled directly by regenerateAiOptimization function
+
+  const moveSection = (sectionName: string, direction: "up" | "down") => {
+    const currentOrder = [...resumeData.sectionOrder];
+    const index = currentOrder.indexOf(sectionName);
+
+    if (direction === "up" && index > 0) {
+      const newOrder = [...currentOrder];
+      [newOrder[index], newOrder[index - 1]] = [newOrder[index - 1], newOrder[index]];
+      updateResumeData({ sectionOrder: newOrder });
+    } else if (direction === "down" && index < currentOrder.length - 1) {
+      const newOrder = [...currentOrder];
+      [newOrder[index], newOrder[index + 1]] = [newOrder[index + 1], newOrder[index]];
+      updateResumeData({ sectionOrder: newOrder });
+    }
+  };
+
+  // Function to save resume to the dashboard
+  const saveResumeToDashboard = async () => {
+    if (!isUserLoggedIn) {
+      // Store the request for later retry
+      setLastRequestedFeature('save');
+      setShowPremiumModal(true);
+      return; // Exit if user doesn't have access
+    }
+
+    setIsSavingResume(true); // Start loading animation
+
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      
+      if (!user) {
+        console.error('No user found');
+        setIsSavingResume(false);
+        return;
+      }
+
+      // Create a new resume object with data structure that Dashboard component can read
+      const resumeId = crypto.randomUUID();
+      const resumeJobTitle = resumeData.personalInfo.title || 'No Title';
+      const resumeToSave = {
+        user_id: user.id,
+        id: resumeId,
+        name: `${resumeData.personalInfo.fullName || 'Untitled'} Resume`,
+        content: JSON.stringify({
+          ...resumeData,
+          id: resumeId,
+          jobTitle: resumeJobTitle, // Include the job title in the content JSON
+          metadata: {
+            lastModified: new Date().toISOString(),
+            template: 'standard'
+          }
+        }),
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString() // For compatibility with existing code
+      };
+      
+      // We'll update localStorage after the save completes with the server-generated ID
+
+      console.log('About to save resume to Supabase:', resumeToSave);
+      // Log the structure of the available columns in the table
+      try {
+        const { data: tableInfo, error: tableError } = await supabase
+          .from('resumes')
+          .select('*')
+          .limit(1);
+          
+        if (tableError) {
+          console.error('Error fetching table structure:', tableError);
+        } else {
+          console.log('Table structure example:', tableInfo);
+        }
+      } catch (e) {
+        console.error('Error checking table structure:', e);
+      }
+
+      // Save to Supabase 'resumes' table - with simplified approach
+      // First, let's just try to save the minimal required fields
+      const { data, error } = await supabase
+        .from('resumes')
+        .insert([{
+          user_id: resumeToSave.user_id,
+          name: resumeToSave.name,
+          content: resumeToSave.content
+          // Omitting id, created_at and updated_at to let Supabase handle them
+        }])
+        .select();
+
+      if (error) {
+        console.error('Error saving resume:', error);
+        console.error('Error details:', JSON.stringify(error, null, 2));
+        console.error('Resume data sent:', JSON.stringify(resumeToSave, null, 2));
+        setOptimizationError(`Failed to save resume: ${error.message || 'Unknown error'}`);
+        setIsSavingResume(false);
+        return;
+      }
+
+      console.log('Resume saved successfully with response:', data);
+      
+      // Now that we have the server-generated ID, update our localStorage with correct ID
+      if (data && data.length > 0) {
+        const savedResume = data[0];
+        console.log('Server-generated ID:', savedResume.id);
+        
+        // Update localStorage with the correct server-generated ID
+        const updatedResumeForCache = {
+          ...resumeToSave,
+          id: savedResume.id // Use server-generated ID instead of client-generated ID
+        };
+        
+        localStorage.setItem(`${user.id}:resumes`, JSON.stringify([updatedResumeForCache]));
+        localStorage.setItem(`${user.id}:last_resume_pull`, new Date().toISOString());
+      }
+      
+      // Force reload resumes in Dashboard next time it's accessed
+      localStorage.removeItem(`${user.id}:last_resume_pull`);
+      
+      // Explicitly increment the resume counter - this only happens when the user clicks Save
+      try {
+        await updateUserStats(user.id, { resumes_created: 1 });
+      } catch (statsError) {
+        console.warn('Failed to increment resume counter:', statsError);
+      }
+      
+      // Log activity for dashboard
+      try {
+        await supabase
+          .from('user_activities')
+          .insert([
+            {
+              user_id: user.id,
+              type: 'resume',
+              action: 'created',
+              target: resumeToSave.name,
+              timestamp: new Date().toISOString()
+            }
+          ]);
+      } catch (activityError) {
+        console.warn('Failed to log activity:', activityError);
+      }
+      
+      alert('Resume saved successfully! You can view and edit it from your Dashboard.');
+
+    } catch (error) {
+      console.error('Error saving resume:', error);
+      setOptimizationError('Failed to save resume. Please try again.');
+    } finally {
+      setIsSavingResume(false); // End loading animation
+    }
+  };
+
+  // Create PDF document component
+  const TestResumeDocument = () => {
+    // Helper function to remove HTML tags for PDF text
+    const stripHtml = (html: string) => {
+      if (!html) return '';
+      
+      // Create a DOM element with the HTML content
+      const doc = new DOMParser().parseFromString(html, 'text/html');
+      
+      // Process list items to ensure they have bullet points and line breaks
+      const listItems = doc.querySelectorAll('li');
+      listItems.forEach(li => {
+        // Add a bullet and space before each list item
+        li.textContent = `• ${li.textContent}`;
+        // Ensure list items end with newlines
+        if (!li.textContent?.endsWith('\n')) {
+          li.textContent = `${li.textContent}\n`;
+        }
+      });
+      
+      return doc.body.textContent || '';
+    };
+    
+    // Create PDF styles
+    const styles = StyleSheet.create({
+      page: {
+        flexDirection: 'column',
+        padding: 30,
+        fontFamily: 'Helvetica'
+      },
+      header: {
+        marginBottom: 20,
+        borderBottomWidth: 1,
+        borderBottomColor: theme.primaryColor,
+        paddingBottom: 10
+      },
+      name: {
+        fontSize: 24,
+        fontWeight: 'bold',
+        color: theme.primaryColor,
+        marginBottom: 5
+      },
+      title: {
+        fontSize: 14,
+        marginBottom: 10,
+        color: '#333'
+      },
+      contactInfo: {
+        flexDirection: 'row',
+        flexWrap: 'wrap',
+        fontSize: 10,
+        color: '#555'
+      },
+      contactItem: {
+        marginRight: 15,
+        marginBottom: 5
+      },
+      sectionTitle: {
+        fontSize: 14,
+        fontWeight: 'bold',
+        color: theme.secondaryColor,
+        marginBottom: 8,
+        marginTop: 15,
+        borderBottomWidth: 1,
+        borderBottomColor: '#eee',
+        paddingBottom: 5
+      },
+      summary: {
+        fontSize: 10,
+        marginBottom: 10,
+        color: '#333',
+        lineHeight: 1.5
+      },
+      experience: {
+        marginBottom: 10
+      },
+      jobTitle: {
+        fontSize: 12,
+        fontWeight: 'bold',
+        color: theme.primaryColor
+      },
+      company: {
+        fontSize: 10,
+        marginBottom: 3
+      },
+      period: {
+        fontSize: 10,
+        fontStyle: 'italic',
+        color: '#555',
+        marginBottom: 5
+      },
+      description: {
+        fontSize: 9,
+        lineHeight: 1.5,
+        color: '#333'
+      }
+    });
+
+    return (
+      <Document title={`${resumeData.personalInfo.fullName || 'Resume'}`} author={resumeData.personalInfo.fullName}>
+        <Page size="A4" style={styles.page}>
+          {/* Header with name, title, and contact information */}
+          <View style={styles.header}>
+            <Text style={styles.name}>{resumeData.personalInfo.fullName || "Your Name"}</Text>
+            <Text style={styles.title}>{resumeData.personalInfo.title || "Your Title"}</Text>
+            <View style={styles.contactInfo}>
+              {resumeData.personalInfo.email && (
+                <Text style={styles.contactItem}>Email: {resumeData.personalInfo.email}</Text>
+              )}
+              {resumeData.personalInfo.phone && (
+                <Text style={styles.contactItem}>Phone: {resumeData.personalInfo.phone}</Text>
+              )}
+              {resumeData.personalInfo.location && (
+                <Text style={styles.contactItem}>Location: {resumeData.personalInfo.location}</Text>
+              )}
+              {resumeData.personalInfo.website && (
+                <Text style={styles.contactItem}>Website: {resumeData.personalInfo.website}</Text>
+              )}
+            </View>
+          </View>
+
+          {/* Summary Section */}
+          {resumeData.personalInfo.summary && (
+            <View>
+              <Text style={styles.sectionTitle}>Professional Summary</Text>
+              <Text style={styles.summary}>
+                {stripHtml(resumeData.personalInfo.summary).split('\n').map((line, i) => (
+                  React.createElement(React.Fragment, { key: i }, 
+                    i > 0 && '\n', 
+                    line
+                  )
+                ))}
+              </Text>
+            </View>
+          )}
+
+          {/* Experience Section */}
+          {resumeData.experience.length > 0 && (
+            <View>
+              <Text style={styles.sectionTitle}>Experience</Text>
+              {resumeData.experience.map((exp, index) => (
+                <View key={`exp-${index}`} style={styles.experience}>
+                  <Text style={styles.jobTitle}>{exp.title}</Text>
+                  <Text style={styles.company}>{exp.company}{exp.location ? `, ${exp.location}` : ''}</Text>
+                  <Text style={styles.period}>
+                    {exp.startDate} - {exp.current ? 'Present' : exp.endDate}
+                  </Text>
+                  {exp.description && (
+                    <Text style={styles.description}>
+                      {stripHtml(exp.description).split('\n').map((line, i) => 
+                        React.createElement(React.Fragment, { key: i }, 
+                          i > 0 && '\n', 
+                          line
+                        )
+                      )}
+                    </Text>
+                  )}
+                </View>
+              ))}
+            </View>
+          )}
+
+          {/* Education Section */}
+          {resumeData.education.length > 0 && visibleSections.includes('education') && (
+            <View>
+              <Text style={styles.sectionTitle}>Education</Text>
+              {resumeData.education.map((edu, index) => (
+                <View key={`edu-${index}`} style={styles.experience}>
+                  <Text style={styles.jobTitle}>{edu.degree}</Text>
+                  <Text style={styles.company}>{edu.institution}{edu.location ? `, ${edu.location}` : ''}</Text>
+                  <Text style={styles.period}>
+                    {edu.startDate} - {edu.current ? 'Present' : edu.endDate}
+                  </Text>
+                  {edu.description && (
+                    <Text style={styles.description}>
+                      {stripHtml(edu.description).split('\n').map((line, i) => 
+                        React.createElement(React.Fragment, { key: i }, 
+                          i > 0 && '\n', 
+                          line
+                        )
+                      )}
+                    </Text>
+                  )}
+                </View>
+              ))}
+            </View>
+          )}
+
+          {/* Custom Sections */}
+          {customSections.map((section) => (
+            <View key={section.id}>
+              <Text style={styles.sectionTitle}>{section.title}</Text>
+              {section.fields.map((field, index) => (
+                <View key={`${section.id}-field-${index}`} style={{marginBottom: 5}}>
+                  <Text style={[styles.description, {fontWeight: 'bold'}]}>{field.name}:</Text>
+                  <Text style={styles.description}>{field.value}</Text>
+                </View>
+              ))}
+            </View>
+          ))}
+        </Page>
+      </Document>
+    );
+  };
+
+  const handleDownloadPDF = async () => {
+    if (!resumeRef.current) return;
+
+    setIsGeneratingPdf(true);
+
+    try {
+      // Generate PDF using react-pdf/renderer
+      console.log("Generating PDF using react-pdf/renderer...");
+      
+      // Create the PDF document
+      const pdfDoc = <TestResumeDocument />;
+      
+      // Generate PDF blob
+      const blob = await pdf(pdfDoc).toBlob();
+      console.log("PDF blob created successfully");
+      
+      // Create URL for download
+      const url = URL.createObjectURL(blob);
+      
+      // Trigger download
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = `${resumeData.personalInfo.fullName || 'Resume'}.pdf`.replace(/\s+/g, '_');
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      
+      // Clean up after download
+      setTimeout(() => {
+        URL.revokeObjectURL(url);
+      }, 1000);
+    } catch (error) {
+      console.error("Error generating PDF:", error);
+      alert("Error generating PDF. Please try again.");
+    } finally {
+      setIsGeneratingPdf(false);
+    }
+  };
+
+  // Quill editor formats and modules
+  const quillFormats = [
+    'header',
+    'bold', 'italic', 'underline', 'strike',
+    'list', 'bullet', 'indent',
+    'link'
+  ];
+
+  const quillModules = {
+    toolbar: [
+      [{ 'header': [1, 2, 3, false] }],
+      ['bold', 'italic', 'underline', 'strike'],
+      [{ 'list': 'ordered' }, { 'list': 'bullet' }],
+      [{ 'indent': '-1' }, { 'indent': '+1' }],
+      ['link'],
+      ['clean']
+    ]
+  };
+
+  return (
+    <div className="container mx-auto py-6 px-4">
+      {/* AI Optimization Preview Modal */}
+      {aiPreview && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
+          <div className="bg-white dark:bg-gray-800 rounded-lg shadow-xl max-w-2xl w-full max-h-[80vh] flex flex-col">
+            <div className="p-4 border-b border-gray-200 dark:border-gray-700 flex justify-between items-center">
+              <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
+                AI Optimized Content
+              </h3>
+              <button
+                onClick={cancelAiOptimization}
+                className="text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200"
+              >
+                <X className="h-5 w-5" />
+              </button>
+            </div>
+            <div className="p-4 overflow-y-auto flex-grow">
+              <div className="mb-3">
+                <label className="block text-sm font-medium mb-1 text-gray-700 dark:text-gray-300">
+                  {aiPreview.section === 'summary' ? 'Optimized Professional Summary' : 'Optimized Experience Description'}
+                </label>
+                <div className="bg-gray-50 dark:bg-gray-700/50 p-2.5 rounded-md border border-gray-200 dark:border-gray-600">
+                  <div className="whitespace-pre-line quill-content preview-list-container" dangerouslySetInnerHTML={{ __html: ensureBulletPoints(aiPreview.content) }} />
+                </div>
+              </div>
+              
+              {aiPreview.section.startsWith('experience-') && (
+                <div className="mt-2 p-2 bg-amber-50 dark:bg-amber-900/20 rounded-md border border-amber-200 dark:border-amber-800/30 text-amber-800 dark:text-amber-300 text-xs">
+                  <strong>Note:</strong> The metrics shown are examples. Please replace with your actual achievements.
+                </div>
+              )}
+              
+            </div>
+            <div className="p-4 border-t border-gray-200 dark:border-gray-700 flex justify-end space-x-2">
+              <button
+                onClick={regenerateAiOptimization}
+                disabled={isRegenerating}
+                className="px-4 py-2 bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-md hover:bg-gray-200 dark:hover:bg-gray-600 flex items-center"
+              >
+                {isRegenerating ? (
+                  <>
+                    <Loader className="h-4 w-4 mr-1 animate-spin" />
+                    <span>Regenerating...</span>
+                  </>
+                ) : (
+                  <>
+                    <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                    </svg>
+                    <span>Regenerate</span>
+                  </>
+                )}
+              </button>
+              <button
+                onClick={applyAiOptimization}
+                className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 flex items-center"
+              >
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                </svg>
+                Apply
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+      
+      {/* Resume Analysis Modal */}
+      {showAnalysisModal && resumeAnalysis && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
+          <div className="bg-white dark:bg-gray-800 rounded-lg shadow-xl max-w-2xl w-full max-h-[80vh] flex flex-col">
+            <div className="p-4 border-b border-gray-200 dark:border-gray-700 flex justify-between items-center">
+              <h3 className="text-lg font-semibold text-gray-900 dark:text-white flex items-center">
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2 text-emerald-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4" />
+                </svg>
+                {resumeData.personalInfo.title ? `${resumeData.personalInfo.title} Resume Analysis` : 'Career-Specific Resume Analysis'}
+              </h3>
+              <button
+                onClick={() => setShowAnalysisModal(false)}
+                className="text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200"
+              >
+                <X className="h-5 w-5" />
+              </button>
+            </div>
+            <div className="p-4 overflow-y-auto flex-grow">
+              {/* ATS Score */}
+              <div className="mb-6 text-center">
+                <div className="inline-flex items-center justify-center w-28 h-28 rounded-full bg-gray-50 dark:bg-gray-800 border-4 border-emerald-100 dark:border-emerald-900/30 mb-2">
+                  <div className="text-3xl font-bold" style={{ color: getScoreColor(resumeAnalysis.score) }}>
+                    {resumeAnalysis.score}
+                  </div>
+                </div>
+                <h4 className="text-sm font-medium text-gray-600 dark:text-gray-400">ATS Compatibility Score</h4>
+              </div>
+              
+              {/* General Feedback */}
+              <div className="mb-6">
+                <h4 className="text-md font-semibold text-gray-900 dark:text-white mb-2 flex items-center">
+                  <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-2 text-blue-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  </svg>
+                  General Feedback
+                </h4>
+                <div className="bg-blue-50 dark:bg-blue-900/20 rounded-lg p-4 text-gray-700 dark:text-gray-300">
+                  {resumeAnalysis.feedback}
+                </div>
+              </div>
+              
+              {/* Improvement Tips */}
+              <div>
+                <h4 className="text-md font-semibold text-gray-900 dark:text-white mb-2 flex items-center">
+                  <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-2 text-amber-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" />
+                  </svg>
+                  Improvement Suggestions
+                </h4>
+                <ul className="space-y-3">
+                  {resumeAnalysis.tips.map((tip, index) => (
+                    <li key={index} className="flex">
+                      <span className="inline-flex items-center justify-center h-6 w-6 rounded-full bg-amber-100 dark:bg-amber-900/30 text-amber-800 dark:text-amber-300 text-xs font-medium mr-3 flex-shrink-0">
+                        {index + 1}
+                      </span>
+                      <span className="text-gray-700 dark:text-gray-300">{tip}</span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            </div>
+            <div className="p-4 border-t border-gray-200 dark:border-gray-700 flex justify-end space-x-2">
+              <button
+                onClick={() => setShowAnalysisModal(false)}
+                className="px-4 py-2 bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-md hover:bg-gray-200 dark:hover:bg-gray-600"
+              >
+                Close
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+      
+      {/* Error Notification */}
+      {optimizationError && (
+        <div className="fixed bottom-4 right-4 bg-red-100 border-l-4 border-red-500 text-red-700 p-4 rounded shadow-md max-w-md z-50 flex items-start">
+          <AlertCircle className="h-5 w-5 mr-2 flex-shrink-0 mt-0.5" />
+          <div>
+            <p className="font-medium">Optimization Error</p>
+            <p className="text-sm">{optimizationError}</p>
+          </div>
+          <button 
+            onClick={() => setOptimizationError(null)} 
+            className="ml-auto text-red-500 hover:text-red-700"
+          >
+            <X className="h-4 w-4" />
+          </button>
+        </div>
+      )}
+      <header className="mb-12">
+        <div className="relative">
+          <h1 className="text-4xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-indigo-600 dark:from-blue-400 dark:to-indigo-400 mb-2">
+            Free Resume Builder
+          </h1>
+          <p className="text-xl text-gray-600 dark:text-gray-300 max-w-2xl">
+            Create a professional resume with our modern, feature-rich builder
+          </p>
+        </div>
+        
+        {/* Feature badges */}
+        <div className="flex flex-wrap gap-3 mt-6">
+          {['Modern Design', 'ATS-Friendly', 'Customizable', 'PDF Export'].map((feature) => (
+            <div
+              key={feature}
+              className="inline-flex items-center px-3 py-1.5 rounded-full text-xs font-medium bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-300"
+            >
+              <Check className="mr-1 h-3 w-3" />
+              {feature}
+            </div>
+          ))}
+        </div>
+      </header>
+
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+        <div className="bg-white dark:bg-gray-800 rounded-xl shadow-md p-6 overflow-hidden">
+          {/* Modern tab design with animated slider */}
+          <div className="relative mb-8">
+            <div className="flex p-1 bg-gray-100 dark:bg-gray-700/50 rounded-lg">
+              {/* Background pill that slides between tabs */}
+              <div 
+                className="absolute h-full top-0 transition-all duration-300 ease-out rounded-md bg-white dark:bg-gray-600 shadow-sm z-0"
+                style={{ 
+                  left: activeTab === 'content' ? '0%' : '50%',
+                  width: '50%'
+                }}
+              ></div>
+              
+              <button
+                onClick={() => setActiveTab('content')}
+                className={`relative z-10 flex-1 flex items-center justify-center px-3 py-2 text-sm font-medium rounded-md transition-all duration-200 ${
+                  activeTab === 'content' 
+                    ? 'text-gray-900 dark:text-white' 
+                    : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-300'
+                }`}
+              >
+                <Eye className="mr-2 h-4 w-4" />
+                Content
+              </button>
+              <button
+                onClick={() => setActiveTab('customize')}
+                className={`relative z-10 flex-1 flex items-center justify-center px-3 py-2 text-sm font-medium rounded-md transition-all duration-200 ${
+                  activeTab === 'customize' 
+                    ? 'text-gray-900 dark:text-white' 
+                    : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-300'
+                }`}
+              >
+                <Settings2 className="mr-2 h-4 w-4" />
+                Customize
+              </button>
+            </div>
+          </div>
+          
+          <AnimatePresence mode="wait">
+            {activeTab === 'content' ? (
+              <motion.div 
+                key="content"
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -10 }}
+                transition={{ duration: 0.2 }}
+                className="space-y-6"
+              >
+                {/* Personal Information Section with Collapsible UI */}
+                <div className="bg-white dark:bg-gray-750 rounded-lg border border-gray-200 dark:border-gray-700 overflow-hidden">
+                  <div 
+                    className="flex justify-between items-center p-4 cursor-pointer bg-gray-50 dark:bg-gray-800/50"
+                    onClick={() => toggleSection('personal')}
+                  >
+                    <h2 className="text-lg font-semibold text-gray-900 dark:text-white flex items-center">
+                      <div className="w-8 h-8 rounded-full bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center mr-3">
+                        <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 text-blue-600 dark:text-blue-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                        </svg>
+                      </div>
+                      Personal Information
+                    </h2>
+                    <div className="transform transition-transform duration-200">
+                      {expandedSections.includes('personal') ? 
+                        <ChevronUp className="w-5 h-5 text-gray-500" /> : 
+                        <ChevronDown className="w-5 h-5 text-gray-500" />
+                      }
+                    </div>
+                  </div>
+                  
+                  {expandedSections.includes('personal') && (
+                    <motion.div 
+                      initial={{ height: 0, opacity: 0 }}
+                      animate={{ height: 'auto', opacity: 1 }}
+                      exit={{ height: 0, opacity: 0 }}
+                      transition={{ duration: 0.2 }}
+                      className="p-4"
+                    >
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                          <label className="block text-sm font-medium mb-1 text-gray-700 dark:text-gray-300">Full Name</label>
+                          <input
+                            type="text"
+                            value={resumeData.personalInfo.fullName}
+                            onChange={(e) => updateSection('personalInfo', { ...resumeData.personalInfo, fullName: e.target.value })}
+                            className="w-full p-2.5 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all duration-200"
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-sm font-medium mb-1 text-gray-700 dark:text-gray-300">Job Title</label>
+                          <input
+                            type="text"
+                            value={resumeData.personalInfo.title}
+                            onChange={(e) => updateSection('personalInfo', { ...resumeData.personalInfo, title: e.target.value })}
+                            className="w-full p-2.5 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all duration-200"
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-sm font-medium mb-1 text-gray-700 dark:text-gray-300">Email</label>
+                          <input
+                            type="email"
+                            value={resumeData.personalInfo.email}
+                            onChange={(e) => updateSection('personalInfo', { ...resumeData.personalInfo, email: e.target.value })}
+                            className="w-full p-2.5 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all duration-200"
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-sm font-medium mb-1 text-gray-700 dark:text-gray-300">Phone</label>
+                          <input
+                            type="tel"
+                            value={resumeData.personalInfo.phone}
+                            onChange={(e) => updateSection('personalInfo', { ...resumeData.personalInfo, phone: e.target.value })}
+                            className="w-full p-2.5 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all duration-200"
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-sm font-medium mb-1 text-gray-700 dark:text-gray-300">Location</label>
+                          <input
+                            type="text"
+                            value={resumeData.personalInfo.location}
+                            onChange={(e) => updateSection('personalInfo', { ...resumeData.personalInfo, location: e.target.value })}
+                            className="w-full p-2.5 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all duration-200"
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-sm font-medium mb-1 text-gray-700 dark:text-gray-300">Website</label>
+                          <input
+                            type="text"
+                            value={resumeData.personalInfo.website}
+                            onChange={(e) => updateSection('personalInfo', { ...resumeData.personalInfo, website: e.target.value })}
+                            className="w-full p-2.5 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all duration-200"
+                          />
+                        </div>
+                      </div>
+                    </motion.div>
+                  )}
+                </div>
+
+                {/* Professional Summary Section */}
+                <div className="bg-white dark:bg-gray-750 rounded-lg border border-gray-200 dark:border-gray-700 overflow-hidden">
+                  <div 
+                    className="flex justify-between items-center p-4 cursor-pointer bg-gray-50 dark:bg-gray-800/50"
+                    onClick={() => toggleSection('summary')}
+                  >
+                    <h2 className="text-lg font-semibold text-gray-900 dark:text-white flex items-center">
+                      <div className="w-8 h-8 rounded-full bg-indigo-100 dark:bg-indigo-900/30 flex items-center justify-center mr-3">
+                        <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 text-indigo-600 dark:text-indigo-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                        </svg>
+                      </div>
+                      Professional Summary
+                    </h2>
+                    <div className="transform transition-transform duration-200">
+                      {expandedSections.includes('summary') ? 
+                        <ChevronUp className="w-5 h-5 text-gray-500" /> : 
+                        <ChevronDown className="w-5 h-5 text-gray-500" />
+                      }
+                    </div>
+                  </div>
+                  
+                  {expandedSections.includes('summary') && (
+                    <motion.div 
+                      initial={{ height: 0, opacity: 0 }}
+                      animate={{ height: 'auto', opacity: 1 }}
+                      exit={{ height: 0, opacity: 0 }}
+                      transition={{ duration: 0.2 }}
+                      className="p-4"
+                    >
+                      <div className="mb-2">
+                        <div className="mb-2">
+                          <ReactQuill
+                            value={resumeData.personalInfo.summary}
+                            onChange={(content) => updateSection('personalInfo', { ...resumeData.personalInfo, summary: content })}
+                            modules={quillModules}
+                            formats={quillFormats}
+                            placeholder="Write a compelling summary of your professional background and key strengths..."
+                            className="bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 rounded-lg border border-gray-300 dark:border-gray-600 min-h-[150px]"
+                          />
+                        </div>
+                        <button
+                          type="button"
+                          className="flex items-center text-sm text-blue-600 hover:text-blue-800 transition-colors bg-blue-50 dark:bg-blue-900/20 px-3 py-1.5 rounded-md"
+                          onClick={() => optimizeSection('summary', resumeData.personalInfo.summary || '')}
+                          disabled={isOptimizing['summary']}
+                        >
+                          {isOptimizing['summary'] ? (
+                            <>
+                              <Loader className="w-4 h-4 mr-1 animate-spin" />
+                              <span>Optimizing...</span>
+                            </>
+                          ) : (
+                            <>
+                              <Wand2 className="w-4 h-4 mr-1" />
+                              <span>Optimize with AI</span>
+                            </>
+                          )}
+                        </button>
+                      </div>
+                      <div className="mt-2 text-xs text-gray-500 flex items-center">
+                        <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
+                        </svg>
+                        Tip: Keep your summary concise (3-5 sentences) and focused on achievements.
+                      </div>
+                    </motion.div>
+                  )}
+                </div>
+
+                {/* Experience Section */}
+                <div className="bg-white dark:bg-gray-750 rounded-lg border border-gray-200 dark:border-gray-700 overflow-hidden">
+                  <div 
+                    className="flex justify-between items-center p-4 cursor-pointer bg-gray-50 dark:bg-gray-800/50"
+                    onClick={() => toggleSection('experience')}
+                  >
+                    <h2 className="text-lg font-semibold text-gray-900 dark:text-white flex items-center">
+                      <div className="w-8 h-8 rounded-full bg-green-100 dark:bg-green-900/30 flex items-center justify-center mr-3">
+                        <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 text-green-600 dark:text-green-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 13.255A23.931 23.931 0 0112 15c-3.183 0-6.22-.62-9-1.745M16 6V4a2 2 0 00-2-2h-4a2 2 0 00-2 2v2m4 6h.01M5 20h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+                        </svg>
+                      </div>
+                      Work Experience
+                    </h2>
+                    <div className="transform transition-transform duration-200">
+                      {expandedSections.includes('experience') ? 
+                        <ChevronUp className="w-5 h-5 text-gray-500" /> : 
+                        <ChevronDown className="w-5 h-5 text-gray-500" />
+                      }
+                    </div>
+                  </div>
+                  
+                  {expandedSections.includes('experience') && (
+                    <motion.div 
+                      initial={{ height: 0, opacity: 0 }}
+                      animate={{ height: 'auto', opacity: 1 }}
+                      exit={{ height: 0, opacity: 0 }}
+                      transition={{ duration: 0.2 }}
+                      className="p-4"
+                    >
+                      {resumeData.experience.length > 0 ? (
+                        <div className="space-y-6">
+                          {resumeData.experience.map((exp, index) => (
+                            <div key={index} className="p-4 bg-gray-50 dark:bg-gray-800/30 rounded-lg border border-gray-200 dark:border-gray-700 relative group">
+                              <div className="absolute -right-2 -top-2 flex space-x-1 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
+                                <button 
+                                  className="bg-red-100 dark:bg-red-900/30 p-1 rounded-full text-red-600 dark:text-red-400 hover:bg-red-200 dark:hover:bg-red-800/50"
+                                  onClick={() => {
+                                    const newExperience = [...resumeData.experience];
+                                    newExperience.splice(index, 1);
+                                    updateSection('experience', newExperience);
+                                  }}
+                                >
+                                  <Trash2 className="h-3.5 w-3.5" />
+                                </button>
+                                {index > 0 && (
+                                  <button 
+                                    className="bg-gray-100 dark:bg-gray-700 p-1 rounded-full text-gray-600 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-600"
+                                    onClick={() => moveSection('experience', 'up')}
+                                  >
+                                    <ChevronUp className="h-3.5 w-3.5" />
+                                  </button>
+                                )}
+                                {index < resumeData.experience.length - 1 && (
+                                  <button 
+                                    className="bg-gray-100 dark:bg-gray-700 p-1 rounded-full text-gray-600 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-600"
+                                    onClick={() => moveSection('experience', 'down')}
+                                  >
+                                    <ChevronDown className="h-3.5 w-3.5" />
+                                  </button>
+                                )}
+                              </div>
+                              
+                              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                                <div>
+                                  <label className="block text-sm font-medium mb-1 text-gray-700 dark:text-gray-300">Job Title</label>
+                                  <input
+                                    type="text"
+                                    value={exp.title}
+                                    onChange={(e) => {
+                                      const newExperience = [...resumeData.experience];
+                                      newExperience[index].title = e.target.value;
+                                      updateSection('experience', newExperience);
+                                    }}
+                                    className="w-full p-2.5 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all duration-200"
+                                  />
+                                </div>
+                                <div>
+                                  <label className="block text-sm font-medium mb-1 text-gray-700 dark:text-gray-300">Company</label>
+                                  <input
+                                    type="text"
+                                    value={exp.company}
+                                    onChange={(e) => {
+                                      const newExperience = [...resumeData.experience];
+                                      newExperience[index].company = e.target.value;
+                                      updateSection('experience', newExperience);
+                                    }}
+                                    className="w-full p-2.5 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all duration-200"
+                                  />
+                                </div>
+                                <div>
+                                  <label className="block text-sm font-medium mb-1 text-gray-700 dark:text-gray-300">Location</label>
+                                  <input
+                                    type="text"
+                                    value={exp.location}
+                                    onChange={(e) => {
+                                      const newExperience = [...resumeData.experience];
+                                      newExperience[index].location = e.target.value;
+                                      updateSection('experience', newExperience);
+                                    }}
+                                    className="w-full p-2.5 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all duration-200"
+                                  />
+                                </div>
+                                <div className="grid grid-cols-2 gap-3">
+                                  <div>
+                                    <label className="block text-sm font-medium mb-1 text-gray-700 dark:text-gray-300">Start Date</label>
+                                    <input
+                                      type="text"
+                                      value={exp.startDate}
+                                      onChange={(e) => {
+                                        const newExperience = [...resumeData.experience];
+                                        newExperience[index].startDate = e.target.value;
+                                        updateSection('experience', newExperience);
+                                      }}
+                                      className="w-full p-2.5 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all duration-200"
+                                      placeholder="e.g., Jan 2020"
+                                    />
+                                  </div>
+                                  <div>
+                                    <label className="block text-sm font-medium mb-1 text-gray-700 dark:text-gray-300">End Date</label>
+                                    <div className="flex">
+                                      <input
+                                        type="text"
+                                        value={exp.current ? "Present" : exp.endDate}
+                                        onChange={(e) => {
+                                          const newExperience = [...resumeData.experience];
+                                          newExperience[index].endDate = e.target.value;
+                                          updateSection('experience', newExperience);
+                                        }}
+                                        className="w-full p-2.5 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all duration-200"
+                                        placeholder="e.g., Dec 2022"
+                                        disabled={exp.current}
+                                      />
+                                    </div>
+                                  </div>
+                                </div>
+                              </div>
+                              
+                              <div className="mb-4">
+                                <label className="flex items-center text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                                  <input
+                                    type="checkbox"
+                                    checked={exp.current}
+                                    onChange={(e) => {
+                                      const newExperience = [...resumeData.experience];
+                                      newExperience[index].current = e.target.checked;
+                                      updateSection('experience', newExperience);
+                                    }}
+                                    className="rounded border-gray-300 text-blue-600 shadow-sm focus:border-blue-300 focus:ring focus:ring-blue-200 focus:ring-opacity-50 mr-2"
+                                  />
+                                  Current position
+                                </label>
+                              </div>
+                              
+                              <div>
+                                <label className="block text-sm font-medium mb-1 text-gray-700 dark:text-gray-300">Description</label>
+                                <div className="mb-2">
+                                  <div className="mb-2">
+                                    <ReactQuill
+                                      value={exp.description}
+                                      onChange={(content) => {
+                                        const newExperience = [...resumeData.experience];
+                                        newExperience[index].description = content;
+                                        updateSection('experience', newExperience);
+                                      }}
+                                      modules={quillModules}
+                                      formats={quillFormats}
+                                      placeholder="Describe your responsibilities, achievements, and skills used in this role..."
+                                      className="bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 rounded-lg border border-gray-300 dark:border-gray-600 min-h-[150px]"
+                                    />
+                                  </div>
+                                  <button
+                                    type="button"
+                                    className="flex items-center text-sm text-blue-600 hover:text-blue-800 transition-colors bg-blue-50 dark:bg-blue-900/20 px-3 py-1.5 rounded-md"
+                                    onClick={() => optimizeSection(`experience-${index}`, exp.description || '')}
+                                    disabled={isOptimizing[`experience-${index}`]}
+                                  >
+                                    {isOptimizing[`experience-${index}`] ? (
+                                      <>
+                                        <Loader className="w-4 h-4 mr-1 animate-spin" />
+                                        <span>Optimizing...</span>
+                                      </>
+                                    ) : (
+                                      <>
+                                        <Wand2 className="w-4 h-4 mr-1" />
+                                        <span>Optimize with AI</span>
+                                      </>
+                                    )}
+                                  </button>
+                                </div>
+                                <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
+                                  Use bullet points for achievements and quantify results where possible.
+                                </p>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      ) : (
+                        <div className="text-center p-6 border border-dashed border-gray-300 dark:border-gray-700 rounded-lg">
+                          <svg className="mx-auto h-12 w-12 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1} d="M21 13.255A23.931 23.931 0 0112 15c-3.183 0-6.22-.62-9-1.745M16 6V4a2 2 0 00-2-2h-4a2 2 0 00-2 2v2m4 6h.01M5 20h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+                          </svg>
+                          <h3 className="mt-2 text-sm font-medium text-gray-900 dark:text-gray-200">No work experience added</h3>
+                          <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">Add your work history to create a comprehensive resume.</p>
+                        </div>
+                      )}
+                      
+                      <div className="mt-4 flex justify-center">
+                        <motion.button
+                          whileHover={{ scale: 1.02 }}
+                          whileTap={{ scale: 0.98 }}
+                          onClick={() => {
+                            const newExperience = [...resumeData.experience];
+                            newExperience.push({
+                              id: crypto.randomUUID(),  // Add unique id
+                              title: "",
+                              company: "",
+                              position: "",  // Add position property
+                              location: "",
+                              startDate: "",
+                              endDate: "",
+                              description: "",
+                              current: false
+                            });
+                            updateSection('experience', newExperience);
+                          }}
+                          className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+                        >
+                          <PlusCircle className="h-4 w-4 mr-2" />
+                          Add Work Experience
+                        </motion.button>
+                      </div>
+                    </motion.div>
+                  )}
+                </div>
+                
+                {/* Education Section */}
+                {expandedSections.includes('education') && (
+                  <div className="bg-white dark:bg-gray-750 rounded-lg border border-gray-200 dark:border-gray-700 overflow-hidden mb-6">
+                    <div 
+                      className="flex justify-between items-center p-4 cursor-pointer bg-gray-50 dark:bg-gray-800/50"
+                      onClick={() => toggleSection('education')}
+                    >
+                      <h2 className="text-lg font-semibold text-gray-900 dark:text-white flex items-center">
+                        <div className="w-8 h-8 rounded-full bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center mr-3">
+                          <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 text-blue-600 dark:text-blue-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 14l9-5-9-5-9 5 9 5z" />
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 14l6.16-3.422a12.083 12.083 0 01.665 6.479A11.952 11.952 0 0012 20.055a11.952 11.952 0 00-6.824-2.998 12.078 12.078 0 01.665-6.479L12 14z" />
+                          </svg>
+                        </div>
+                        Education
+                      </h2>
+                      <div className="transform transition-transform duration-200">
+                        {expandedSections.includes('education') ? 
+                          <ChevronUp className="w-5 h-5 text-gray-500" /> : 
+                          <ChevronDown className="w-5 h-5 text-gray-500" />
+                        }
+                      </div>
+                    </div>
+                    
+                    {expandedSections.includes('education') && (
+                      <motion.div 
+                        initial={{ height: 0, opacity: 0 }}
+                        animate={{ height: 'auto', opacity: 1 }}
+                        exit={{ height: 0, opacity: 0 }}
+                        transition={{ duration: 0.2 }}
+                        className="p-4"
+                      >
+                        {resumeData.education.length > 0 ? (
+                          <div className="space-y-6">
+                            {resumeData.education.map((edu, index) => (
+                              <div key={index} className="p-4 bg-gray-50 dark:bg-gray-800/30 rounded-lg border border-gray-200 dark:border-gray-700 relative group">
+                                <div className="absolute -right-2 -top-2 flex space-x-1 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
+                                  <button 
+                                    className="bg-red-100 dark:bg-red-900/30 p-1 rounded-full text-red-600 dark:text-red-400 hover:bg-red-200 dark:hover:bg-red-800/50"
+                                    onClick={() => {
+                                      const newEducation = [...resumeData.education];
+                                      newEducation.splice(index, 1);
+                                      updateSection('education', newEducation);
+                                    }}
+                                  >
+                                    <Trash2 className="h-3.5 w-3.5" />
+                                  </button>
+                                </div>
+                                
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                                  <div>
+                                    <label className="block text-sm font-medium mb-1 text-gray-700 dark:text-gray-300">Degree/Certificate</label>
+                                    <input
+                                      type="text"
+                                      value={edu.degree}
+                                      onChange={(e) => {
+                                        const newEducation = [...resumeData.education];
+                                        newEducation[index].degree = e.target.value;
+                                        updateSection('education', newEducation);
+                                      }}
+                                      className="w-full p-2.5 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all duration-200"
+                                    />
+                                  </div>
+                                  <div>
+                                    <label className="block text-sm font-medium mb-1 text-gray-700 dark:text-gray-300">Institution</label>
+                                    <input
+                                      type="text"
+                                      value={edu.institution}
+                                      onChange={(e) => {
+                                        const newEducation = [...resumeData.education];
+                                        newEducation[index].institution = e.target.value;
+                                        updateSection('education', newEducation);
+                                      }}
+                                      className="w-full p-2.5 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all duration-200"
+                                    />
+                                  </div>
+                                  <div>
+                                    <label className="block text-sm font-medium mb-1 text-gray-700 dark:text-gray-300">Location</label>
+                                    <input
+                                      type="text"
+                                      value={edu.location}
+                                      onChange={(e) => {
+                                        const newEducation = [...resumeData.education];
+                                        newEducation[index].location = e.target.value;
+                                        updateSection('education', newEducation);
+                                      }}
+                                      className="w-full p-2.5 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all duration-200"
+                                    />
+                                  </div>
+                                  <div className="grid grid-cols-2 gap-3">
+                                    <div>
+                                      <label className="block text-sm font-medium mb-1 text-gray-700 dark:text-gray-300">Start Date</label>
+                                      <input
+                                        type="text"
+                                        value={edu.startDate}
+                                        onChange={(e) => {
+                                          const newEducation = [...resumeData.education];
+                                          newEducation[index].startDate = e.target.value;
+                                          updateSection('education', newEducation);
+                                        }}
+                                        className="w-full p-2.5 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all duration-200"
+                                        placeholder="e.g., Sep 2018"
+                                      />
+                                    </div>
+                                    <div>
+                                      <label className="block text-sm font-medium mb-1 text-gray-700 dark:text-gray-300">End Date</label>
+                                      <div className="flex">
+                                        <input
+                                          type="text"
+                                          value={edu.current ? "Present" : edu.endDate}
+                                          onChange={(e) => {
+                                            const newEducation = [...resumeData.education];
+                                            newEducation[index].endDate = e.target.value;
+                                            updateSection('education', newEducation);
+                                          }}
+                                          className="w-full p-2.5 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all duration-200"
+                                          placeholder="e.g., May 2022"
+                                          disabled={edu.current}
+                                        />
+                                      </div>
+                                    </div>
+                                  </div>
+                                </div>
+                                
+                                <div className="mb-4">
+                                  <label className="flex items-center text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                                    <input
+                                      type="checkbox"
+                                      checked={edu.current}
+                                      onChange={(e) => {
+                                        const newEducation = [...resumeData.education];
+                                        newEducation[index].current = e.target.checked;
+                                        updateSection('education', newEducation);
+                                      }}
+                                      className="rounded border-gray-300 text-blue-600 shadow-sm focus:border-blue-300 focus:ring focus:ring-blue-200 focus:ring-opacity-50 mr-2"
+                                    />
+                                    Currently studying
+                                  </label>
+                                </div>
+                                
+                                <div>
+                                  <label className="block text-sm font-medium mb-1 text-gray-700 dark:text-gray-300">Description</label>
+                                  <div className="mb-2">
+                                    <div className="mb-2">
+                                      <ReactQuill
+                                        value={edu.description}
+                                        onChange={(content) => {
+                                          const newEducation = [...resumeData.education];
+                                          newEducation[index].description = content;
+                                          updateSection('education', newEducation);
+                                        }}
+                                        modules={quillModules}
+                                        formats={quillFormats}
+                                        placeholder="Describe your studies, achievements, relevant coursework, etc..."
+                                        className="bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 rounded-lg border border-gray-300 dark:border-gray-600 min-h-[150px]"
+                                      />
+                                    </div>
+                                    <button
+                                      type="button"
+                                      className="flex items-center text-sm text-blue-600 hover:text-blue-800 transition-colors bg-blue-50 dark:bg-blue-900/20 px-3 py-1.5 rounded-md"
+                                      onClick={() => optimizeSection(`education-${index}`, edu.description || '')}
+                                      disabled={isOptimizing[`education-${index}`]}
+                                    >
+                                      {isOptimizing[`education-${index}`] ? (
+                                        <>
+                                          <Loader className="w-4 h-4 mr-1 animate-spin" />
+                                          <span>Optimizing...</span>
+                                        </>
+                                      ) : (
+                                        <>
+                                          <Wand2 className="w-4 h-4 mr-1" />
+                                          <span>Optimize with AI</span>
+                                        </>
+                                      )}
+                                    </button>
+                                  </div>
+                                  <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
+                                    Include relevant coursework, achievements, and skills gained.
+                                  </p>
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        ) : (
+                          <div className="text-center p-6 border border-dashed border-gray-300 dark:border-gray-700 rounded-lg">
+                            <svg className="mx-auto h-12 w-12 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1} d="M12 14l9-5-9-5-9 5 9 5z" />
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1} d="M12 14l6.16-3.422a12.083 12.083 0 01.665 6.479A11.952 11.952 0 0012 20.055a11.952 11.952 0 00-6.824-2.998 12.078 12.078 0 01.665-6.479L12 14z" />
+                            </svg>
+                            <h3 className="mt-2 text-sm font-medium text-gray-900 dark:text-gray-200">No education added</h3>
+                            <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">Add your educational background to create a comprehensive resume.</p>
+                          </div>
+                        )}
+                        
+                        <div className="mt-4 flex justify-center">
+                          <motion.button
+                            whileHover={{ scale: 1.02 }}
+                            whileTap={{ scale: 0.98 }}
+                            onClick={() => {
+                              const newEducation = [...resumeData.education];
+                              newEducation.push({
+                                id: crypto.randomUUID(),  // Add unique id
+                                degree: "",
+                                institution: "",
+                                field: "",  // Add field property
+                                location: "",
+                                startDate: "",
+                                endDate: "",
+                                description: "",
+                                current: false
+                              });
+                              updateSection('education', newEducation);
+                            }}
+                            className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+                          >
+                            <PlusCircle className="h-4 w-4 mr-2" />
+                            Add Education
+                          </motion.button>
+                        </div>
+                      </motion.div>
+                    )}
+                  </div>
+                )}
+                
+                {/* Custom Sections */}
+                {customSections.map(section => (
+                  <div key={section.id} className="mb-6">
+                    <div className="bg-white dark:bg-gray-750 rounded-lg border border-gray-200 dark:border-gray-700 overflow-hidden">
+                      <div 
+                        className="flex justify-between items-center p-4 cursor-pointer bg-gray-50 dark:bg-gray-800/50"
+                        onClick={() => toggleSection(section.id)}
+                      >
+                        <h2 className="text-lg font-semibold text-gray-900 dark:text-white flex items-center">
+                          <div className="w-8 h-8 rounded-full bg-purple-100 dark:bg-purple-900/30 flex items-center justify-center mr-3">
+                            <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 text-purple-600 dark:text-purple-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                            </svg>
+                          </div>
+                          {section.title}
+                        </h2>
+                        <div className="flex items-center space-x-2">
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              deleteCustomSection(section.id);
+                            }}
+                            className="p-1 text-red-500 hover:text-red-700 transition-colors"
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </button>
+                          <div className="transform transition-transform duration-200">
+                            {expandedSections.includes(section.id) ? 
+                              <ChevronUp className="w-5 h-5 text-gray-500" /> : 
+                              <ChevronDown className="w-5 h-5 text-gray-500" />
+                            }
+                          </div>
+                        </div>
+                      </div>
+                      
+                      {expandedSections.includes(section.id) && (
+                        <motion.div 
+                          initial={{ height: 0, opacity: 0 }}
+                          animate={{ height: 'auto', opacity: 1 }}
+                          exit={{ height: 0, opacity: 0 }}
+                          transition={{ duration: 0.2 }}
+                          className="p-4"
+                        >
+                          {/* Section Title */}
+                          <div className="mb-4">
+                            <label className="block text-sm font-medium mb-1 text-gray-700 dark:text-gray-300">Section Title</label>
+                            <input
+                              type="text"
+                              value={section.title}
+                              onChange={(e) => updateCustomSectionTitle(section.id, e.target.value)}
+                              className="w-full p-2.5 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all duration-200"
+                              placeholder="e.g., Awards, Certifications, Publications"
+                            />
+                          </div>
+                          
+                          {/* Custom Fields */}
+                          <div className="space-y-4">
+                            {section.fields.map((field, _) => (
+                              <div key={field.id} className="grid grid-cols-12 gap-2 items-center">
+                                <div className="col-span-5">
+                                  <input
+                                    type="text"
+                                    value={field.name}
+                                    onChange={(e) => updateCustomSectionField(section.id, field.id, {name: e.target.value})}
+                                    className="w-full p-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100"
+                                    placeholder="Field Name"
+                                  />
+                                </div>
+                                <div className="col-span-6">
+                                  <input
+                                    type="text"
+                                    value={field.value}
+                                    onChange={(e) => updateCustomSectionField(section.id, field.id, {value: e.target.value})}
+                                    className="w-full p-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100"
+                                    placeholder="Field Value"
+                                  />
+                                </div>
+                                <div className="col-span-1 flex justify-center">
+                                  <button
+                                    onClick={() => deleteFieldFromCustomSection(section.id, field.id)}
+                                    className="p-1 text-red-500 hover:text-red-700 transition-colors"
+                                    disabled={section.fields.length <= 1}
+                                  >
+                                    <Trash2 className="w-4 h-4" />
+                                  </button>
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                          
+                          {/* Add Field Button */}
+                          <button
+                            onClick={() => addFieldToCustomSection(section.id)}
+                            className="mt-4 inline-flex items-center px-3 py-1.5 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm text-xs font-medium text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600"
+                          >
+                            <PlusCircle className="h-3.5 w-3.5 mr-1" />
+                            Add Field
+                          </button>
+                        </motion.div>
+                      )}
+                    </div>
+                  </div>
+                ))}
+
+                {/* Skills Section removed */}
+
+                {/* Add more sections menu */}
+                <div className="text-center py-6">
+                  <div className="relative inline-block">
+                    {/* Add More Sections button */}
+                    <button 
+                      onClick={() => setShowSectionMenu(prev => !prev)}
+                      className="inline-flex items-center px-4 py-2 bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 rounded-lg hover:bg-blue-200 dark:hover:bg-blue-800/50 transition-colors duration-200"
+                    >
+                      <PlusCircle className="w-4 h-4 mr-2" />
+                      <span>Add More Sections</span>
+                    </button>
+                    
+                    {/* Section selection dropdown */}
+                    {showSectionMenu && (
+                      <div className="absolute mt-2 z-10 w-56 origin-top-right bg-white dark:bg-gray-800 rounded-md shadow-lg border border-gray-200 dark:border-gray-700">
+                        <div className="py-1">
+                          {!expandedSections.includes('education') && (
+                            <button
+                              onClick={() => {
+                                toggleSection('education');
+                                setVisibleSections(prev => [...prev, 'education']);
+                                setShowSectionMenu(false);
+                              }}
+                              className="flex items-center w-full px-4 py-2 text-left text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 text-sm"
+                            >
+                              <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-2 text-blue-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 14l9-5-9-5-9 5 9 5z" />
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 14l6.16-3.422a12.083 12.083 0 01.665 6.479A11.952 11.952 0 0012 20.055a11.952 11.952 0 00-6.824-2.998 12.078 12.078 0 01.665-6.479L12 14z" />
+                              </svg>
+                              Education
+                            </button>
+                          )}
+                          
+                          {/* Custom Section option */}
+                          <button
+                            onClick={addCustomSection}
+                            className="flex items-center w-full px-4 py-2 text-left text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 text-sm border-t border-gray-200 dark:border-gray-700"
+                          >
+                            <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-2 text-purple-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+                            </svg>
+                            Custom Section
+                          </button>
+                          {/* More sections can be added here in the future */}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </motion.div>
+            ) : (
+              <motion.div 
+                key="customize"
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -10 }}
+                transition={{ duration: 0.2 }}
+                className="space-y-6"
+              >
+                {/* Theme Customization UI will be added here later */}
+                <div className="bg-white dark:bg-gray-750 rounded-lg border border-gray-200 dark:border-gray-700 overflow-hidden">
+                  <div className="p-4 bg-gray-50 dark:bg-gray-800/50">
+                    <h2 className="text-lg font-semibold text-gray-900 dark:text-white flex items-center">
+                      <Palette className="mr-2 h-5 w-5 text-purple-500" />
+                      Color Scheme
+                    </h2>
+                  </div>
+                  <div className="p-4">
+                    <div className="grid grid-cols-2 gap-4">
+                      <div>
+                        <label className="block text-sm font-medium mb-1 text-gray-700 dark:text-gray-300">Primary Color</label>
+                        <div className="flex items-center">
+                          <input 
+                            type="color"
+                            value={theme.primaryColor}
+                            onChange={(e) => setTheme({...theme, primaryColor: e.target.value})}
+                            className="h-10 w-10 rounded-lg border border-gray-300 dark:border-gray-600 p-1 mr-2"
+                          />
+                          <input
+                            type="text"
+                            value={theme.primaryColor}
+                            onChange={(e) => setTheme({...theme, primaryColor: e.target.value})}
+                            className="flex-1 p-2.5 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100"
+                          />
+                        </div>
+                      </div>
+                      <div>
+                        <label className="block text-sm font-medium mb-1 text-gray-700 dark:text-gray-300">Secondary Color</label>
+                        <div className="flex items-center">
+                          <input 
+                            type="color"
+                            value={theme.secondaryColor}
+                            onChange={(e) => setTheme({...theme, secondaryColor: e.target.value})}
+                            className="h-10 w-10 rounded-lg border border-gray-300 dark:border-gray-600 p-1 mr-2"
+                          />
+                          <input
+                            type="text"
+                            value={theme.secondaryColor}
+                            onChange={(e) => setTheme({...theme, secondaryColor: e.target.value})}
+                            className="flex-1 p-2.5 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100"
+                          />
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="mt-6">
+                      <h3 className="text-md font-medium text-gray-800 dark:text-gray-200 mb-3">Preset Color Schemes</h3>
+                      <div className="grid grid-cols-4 gap-3">
+                        {[
+                          {primary: "#0ea5e9", secondary: "#f97316"},
+                          {primary: "#8b5cf6", secondary: "#ec4899"},
+                          {primary: "#10b981", secondary: "#6366f1"},
+                          {primary: "#ef4444", secondary: "#64748b"},
+                          {primary: "#6366f1", secondary: "#14b8a6"},
+                          {primary: "#0284c7", secondary: "#4f46e5"},
+                          {primary: "#d946ef", secondary: "#0891b2"},
+                          {primary: "#0f172a", secondary: "#64748b"},
+                        ].map((colors, index) => (
+                          <button 
+                            key={index}
+                            onClick={() => setTheme({...theme, primaryColor: colors.primary, secondaryColor: colors.secondary})}
+                            className="flex flex-col items-center p-2 border border-gray-200 dark:border-gray-700 rounded-lg hover:shadow-md transition-shadow duration-200"
+                          >
+                            <div className="flex mb-2">
+                              <div className="w-6 h-6 rounded-full" style={{backgroundColor: colors.primary}}></div>
+                              <div className="w-6 h-6 rounded-full -ml-1" style={{backgroundColor: colors.secondary}}></div>
+                            </div>
+                            <span className="text-xs text-gray-600 dark:text-gray-400">Theme {index + 1}</span>
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Font and Layout options placeholder */}
+                <div className="bg-white dark:bg-gray-750 rounded-lg border border-gray-200 dark:border-gray-700 p-4">
+                  <div className="text-center text-gray-600 dark:text-gray-400">
+                    <p>More customization options (fonts, layout, spacing) will be added soon.</p>
+                  </div>
+                </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
+        </div>
+
+        <div className="bg-white dark:bg-gray-800 rounded-xl shadow-md p-6 relative">
+          <div className="absolute top-4 right-4 flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-2">
+            <motion.button
+              whileHover={{ scale: 1.05, boxShadow: "0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05)" }}
+              whileTap={{ scale: 0.95 }}
+              className="flex items-center justify-center gap-2 px-3 sm:px-4 py-2 sm:py-2.5 bg-emerald-600 text-white rounded-xl shadow-lg transition-all duration-300 font-medium text-sm sm:text-base w-full sm:w-auto"
+              onClick={analyzeResume}
+              disabled={isAnalyzingResume}
+            >
+              {isAnalyzingResume ? (
+                <>
+                  <Loader className="h-4 w-4 animate-spin mr-1" />
+                  <span>Analyzing...</span>
+                </>
+              ) : (
+                <>
+                  <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4" />
+                  </svg>
+                  <span>Analyze Resume</span>
+                </>
+              )}
+            </motion.button>
+            
+            {/* Save Resume button - only visible for logged-in users */}
+            {isUserLoggedIn && (
+              <motion.button
+                whileHover={{ scale: 1.05, boxShadow: "0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05)" }}
+                whileTap={{ scale: 0.95 }}
+                className={`flex items-center justify-center gap-2 px-3 sm:px-4 py-2 sm:py-2.5 ${isSavingResume ? 'bg-amber-500' : 'bg-amber-600'} text-white rounded-xl shadow-lg transition-all duration-300 font-medium text-sm sm:text-base w-full sm:w-auto`}
+                onClick={saveResumeToDashboard}
+                disabled={isSavingResume}
+              >
+                {isSavingResume ? (
+                  <>
+                    <Loader className="h-4 w-4 animate-spin mr-1" />
+                    <span>Saving...</span>
+                  </>
+                ) : (
+                  <>
+                    <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3m-1 4l-3 3m0 0l-3-3m3 3V4" />
+                    </svg>
+                    <span>Save Resume</span>
+                  </>
+                )}
+              </motion.button>
+            )}
+            <motion.button
+              whileHover={{ scale: 1.05, boxShadow: "0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05)" }}
+              whileTap={{ scale: 0.95 }}
+              className={`flex items-center justify-center gap-2 px-3 sm:px-4 py-2 sm:py-2.5 ${isGeneratingPdf ? 'bg-indigo-500' : 'bg-gradient-to-r from-indigo-600 to-violet-600'} text-white rounded-xl shadow-lg transition-all duration-300 font-medium text-sm sm:text-base w-full sm:w-auto`}
+              onClick={handleDownloadPDF}
+              disabled={isGeneratingPdf}
+            >
+              {isGeneratingPdf ? (
+                <>
+                  <Loader className="h-4 w-4 animate-spin mr-1" />
+                  <span>Generating PDF</span>
+                </>
+              ) : (
+                <>
+                  <Download className="h-4 w-4 mr-1" />
+                  <span>Download PDF</span>
+                </>
+              )}
+            </motion.button>
+          </div>
+          
+          <div className="mt-24 sm:mt-14 border rounded-md p-8 bg-white shadow-sm" ref={resumeRef}>
+            <div className="mb-6 border-b pb-6">
+              <h1 className="text-2xl font-bold" style={{color: theme.primaryColor}}>{resumeData.personalInfo.fullName || "Your Name"}</h1>
+              <p className="text-lg text-gray-700">{resumeData.personalInfo.title || "Your Title"}</p>
+              <div className="flex flex-wrap gap-4 mt-2 text-sm text-gray-600">
+                {resumeData.personalInfo.email && <span className="flex items-center"><svg className="h-4 w-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" /></svg>{resumeData.personalInfo.email}</span>}
+                {resumeData.personalInfo.phone && <span className="flex items-center"><svg className="h-4 w-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" /></svg>{resumeData.personalInfo.phone}</span>}
+                {resumeData.personalInfo.location && <span className="flex items-center"><svg className="h-4 w-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" /></svg>{resumeData.personalInfo.location}</span>}
+                {resumeData.personalInfo.website && <span className="flex items-center"><svg className="h-4 w-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10.172 13.828a4 4 0 015.656 0l4 4a4 4 0 01-5.656 5.656l-1.102-1.101" /></svg>{resumeData.personalInfo.website}</span>}
+              </div>
+            </div>
+            
+            {/* Professional Summary */}
+            {resumeData.personalInfo.summary && (
+              <div className="mb-6">
+                <h2 className="text-lg font-semibold mb-2" style={{color: theme.secondaryColor}}>Professional Summary</h2>
+                <div 
+                  className="text-gray-700 quill-content"
+                  dangerouslySetInnerHTML={{ __html: ensureBulletPoints(resumeData.personalInfo.summary) }}
+                />
+              </div>
+            )}
+            
+            {/* Experience Section */}
+            {resumeData.experience.length > 0 && (
+              <div className="mb-6">
+                <h2 className="text-lg font-semibold mb-4 pb-1 border-b" style={{color: theme.secondaryColor, borderColor: `${theme.secondaryColor}40`}}>Experience</h2>
+                <div className="space-y-4">
+                  {resumeData.experience.map((exp, index) => (
+                    <div key={index} className="mb-3">
+                      <div className="flex justify-between items-start">
+                        <div>
+                          <h3 className="font-medium" style={{color: theme.primaryColor}}>{exp.title}</h3>
+                          <p className="text-gray-700">{exp.company}{exp.location ? `, ${exp.location}` : ''}</p>
+                        </div>
+                        <div className="text-sm text-gray-600 shrink-0 ml-4">
+                          {exp.startDate} - {exp.current ? 'Present' : exp.endDate}
+                        </div>
+                      </div>
+                      {exp.description && (
+                        <div 
+                          className="mt-2 text-gray-700 text-sm quill-content resume-experience-content"
+                          dangerouslySetInnerHTML={{ __html: ensureBulletPoints(exp.description) }}
+                        />
+                      )}
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+            
+            {/* Education Section */}
+            {resumeData.education.length > 0 && visibleSections.includes('education') && (
+              <div className="mb-6">
+                <h2 className="text-lg font-semibold mb-4 pb-1 border-b" style={{color: theme.secondaryColor, borderColor: `${theme.secondaryColor}40`}}>Education</h2>
+                <div className="space-y-4">
+                  {resumeData.education.map((edu, index) => (
+                    <div key={index} className="mb-3">
+                      <div className="flex justify-between items-start">
+                        <div>
+                          <h3 className="font-medium" style={{color: theme.primaryColor}}>{edu.degree}</h3>
+                          <p className="text-gray-700">{edu.institution}{edu.location ? `, ${edu.location}` : ''}</p>
+                        </div>
+                        <div className="text-sm text-gray-600 shrink-0 ml-4">
+                          {edu.startDate} - {edu.current ? 'Present' : edu.endDate}
+                        </div>
+                      </div>
+                      {edu.description && (
+                        <div 
+                          className="mt-2 text-gray-700 text-sm quill-content resume-education-content"
+                          dangerouslySetInnerHTML={{ __html: ensureBulletPoints(edu.description) }}
+                        />
+                      )}
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+            
+            {/* Custom Sections */}
+            {customSections.map((section) => (
+              <div key={section.id} className="mb-6">
+                <h2 className="text-lg font-semibold mb-4 pb-1 border-b" style={{color: theme.secondaryColor, borderColor: `${theme.secondaryColor}40`}}>{section.title}</h2>
+                <div className="space-y-3">
+                  {section.fields.map((field) => (
+                    <div key={field.id} className="mb-2">
+                      <div className="flex">
+                        <div className="w-1/3 font-medium text-gray-700">{field.name}:</div>
+                        <div className="w-2/3 text-gray-700">{field.value}</div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            ))}
+            
+            {/* Placeholder for additional sections */}
+            {resumeData.experience.length === 0 && (
+              <div className="text-center text-gray-500 italic mt-8 p-6 border border-dashed border-gray-300 rounded-lg">
+                <p>Your experience, education, and skills sections will appear here as you add them.</p>
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
+
+      {/* Login status toggle removed for production */}
+
+      {/* Premium Plan Modal */}
+      <PremiumPlanModal 
+        isOpen={showPremiumModal}
+        onClose={() => setShowPremiumModal(false)}
+        lastRequestedFeature={lastRequestedFeature ? lastRequestedFeature : undefined}
+      />
+      {/* Login and signup logic are now handled by the PremiumPlanModal component */}
+    </div>
+  );
+};
+
+// Note: The Test component is now removed as it's no longer needed
+// We're directly exporting the ResumeBuilderImpl component
+
+export default ResumeBuilderImpl; 

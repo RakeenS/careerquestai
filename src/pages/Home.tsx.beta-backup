@@ -1,0 +1,951 @@
+import React, { useState } from 'react';
+import { 
+  Briefcase, Wand2, Shield, 
+  Zap, Target, ChevronRight,
+  Bot, Rocket, Check, X,
+  Clock, FileText, Mail, Video, Blocks, Star, ArrowRight,
+  Fingerprint, Users
+} from 'lucide-react';
+import { motion } from 'framer-motion';
+import WaitlistModal from '../components/WaitlistModal';
+
+// Testimonials data
+const testimonials = [
+  {
+    name: "Sarah Johnson",
+    role: "Product Manager",
+    company: "TechCorp",
+    image: "https://randomuser.me/api/portraits/women/44.jpg",
+    content: "CareerQuestAI completely transformed my job search. The AI-generated resume got me more interviews in two weeks than I had in the previous three months!",
+    increase: "300% more interviews"
+  },
+  {
+    name: "David Chen",
+    role: "Software Engineer",
+    company: "InnovateSoft",
+    image: "https://randomuser.me/api/portraits/men/32.jpg",
+    content: "The interview prep feature is amazing. It predicted 80% of the questions I was asked and helped me prepare perfect answers tailored to each company.",
+    increase: "Offer accepted in 3 weeks"
+  },
+  {
+    name: "Aisha Patel",
+    role: "Marketing Specialist",
+    company: "GrowthLabs",
+    image: "https://randomuser.me/api/portraits/women/68.jpg",
+    content: "I was switching careers and struggling with how to position myself. The AI coach helped me identify transferable skills and articulate my value proposition.",
+    increase: "Career transition success"
+  }
+];
+
+// Stats data
+const stats = [
+  {
+    value: "87%",
+    label: "Higher Interview Rate",
+    icon: <Target className="w-8 h-8" />
+  },
+  {
+    value: "2.5x",
+    label: "Faster Job Placement",
+    icon: <Zap className="w-8 h-8" />
+  },
+  {
+    value: "94%",
+    label: "User Satisfaction",
+    icon: <Star className="w-8 h-8" />
+  },
+  {
+    value: "100%",
+    label: "AI-Powered",
+    icon: <Users className="w-8 h-8" />
+  }
+];
+
+// Process Steps
+const processSteps = [
+  {
+    step: 1,
+    title: "Create Your Profile",
+    description: "Sign up and enter your career goals, experience, and skill sets. Our AI analyzes your background to create a personalized career strategy.",
+    icon: <Fingerprint className="w-6 h-6" />
+  },
+  {
+    step: 2,
+    title: "Build Your Professional Brand",
+    description: "Our AI generates tailored resumes and cover letters for each job application, optimizing them for ATS systems and human recruiters alike.",
+    icon: <FileText className="w-6 h-6" />
+  },
+  {
+    step: 3,
+    title: "Prepare With AI Interview Coach",
+    description: "Practice industry-specific interview questions with our AI coach that provides real-time feedback on your answers and communication style.",
+    icon: <Bot className="w-6 h-6" />
+  },
+  {
+    step: 4,
+    title: "Apply With Confidence",
+    description: "Get matched with job opportunities that align with your skills and preferences. Apply with tailored applications that highlight your strengths.",
+    icon: <Briefcase className="w-6 h-6" />
+  },
+  {
+    step: 5,
+    title: "Track Your Progress",
+    description: "Monitor your application status and receive AI-powered insights on how to improve your strategy and increase your chances of success.",
+    icon: <Clock className="w-6 h-6" />
+  }
+];
+
+// FAQ Items
+const faqItems = [
+  {
+    question: "How does CareerQuestAI use artificial intelligence?",
+    answer: "CareerQuestAI leverages advanced machine learning algorithms to analyze your background, the job market, and specific job requirements. Our AI customizes resumes and cover letters that are optimized for both ATS systems and human recruiters, provides personalized interview coaching, and delivers strategic career guidance based on your unique profile and goals."
+  },
+  {
+    question: "Is my data secure and private?",
+    answer: "Absolutely. We take data privacy extremely seriously. All personal information is encrypted and stored securely. We never share your data with third parties without your explicit consent. You maintain full control over your information, and our systems comply with GDPR, CCPA, and other privacy regulations."
+  },
+  {
+    question: "Can I use CareerQuestAI for career transitions?",
+    answer: "Yes! CareerQuestAI is especially powerful for career transitions. Our system identifies transferable skills, helps you articulate your value proposition for new industries, and guides you on acquiring relevant qualifications. We've helped thousands of professionals successfully pivot to new career paths."
+  },
+  {
+    question: "How much does the service cost?",
+    answer: "We offer multiple tiers to fit different needs and budgets. Our basic plan starts with essential tools at an accessible price point, while premium tiers include advanced features like AI interview coaching and personalized career strategy sessions. Early adopters on our waitlist receive special pricing and lifetime benefits."
+  },
+  {
+    question: "How soon can I expect results?",
+    answer: "While results vary based on your field, experience level, and the job market, our users typically see a significant increase in interview invitations within the first 2-3 weeks. The full job search process with CareerQuestAI is on average 40% faster than traditional methods."
+  }
+];
+
+// Feature data with more detailed descriptions
+const features = [
+  {
+    icon: <Wand2 className="w-6 h-6 text-blue-500" />,
+    title: "AI Resume Optimization",
+    description: "Our advanced AI analyzes your resume against job descriptions, optimizing content and formatting to increase your interview chances by up to 70%. We identify missing keywords, suggest improvements, and ensure your resume passes through Applicant Tracking Systems.",
+    imageUrl: "https://placehold.co/600x400/4f46e5/ffffff?text=Resume+Optimization",
+    benefits: [
+      "Keyword optimization for ATS systems",
+      "Tailored content suggestions for each job",
+      "Professional formatting recommendations"
+    ]
+  },
+  {
+    icon: <Bot className="w-6 h-6 text-purple-500" />,
+    title: "AI Interview Coach",
+    description: "Practice with our intelligent AI interviewer that adapts to your responses, providing real-time feedback and personalized improvement suggestions. Prepare for behavioral, technical, and situational questions across different industries.",
+    imageUrl: "https://placehold.co/600x400/4f46e5/ffffff?text=Interview+Coach",
+    benefits: [
+      "Real-time feedback on your responses",
+      "Industry-specific question preparation",
+      "Body language and tone analysis"
+    ]
+  },
+  {
+    icon: <FileText className="w-6 h-6 text-green-500" />,
+    title: "Smart Resume Builder",
+    description: "Create ATS-friendly resumes with our intelligent builder featuring modern templates and real-time optimization suggestions. Our AI helps you craft compelling descriptions, highlight relevant skills, and format your resume professionally.",
+    imageUrl: "https://placehold.co/600x400/4f46e5/ffffff?text=Resume+Builder",
+    benefits: [
+      "Modern, professionally designed templates",
+      "AI-powered content suggestions",
+      "One-click formatting options"
+    ]
+  },
+  {
+    icon: <Mail className="w-6 h-6 text-pink-500" />,
+    title: "Follow-up Generator",
+    description: "Generate perfectly timed and professionally crafted follow-up emails for every stage of your job search journey. Our templates help you strike the right tone whether you're thanking an interviewer or checking on your application status.",
+    imageUrl: "https://placehold.co/600x400/4f46e5/ffffff?text=Email+Generator",
+    benefits: [
+      "Context-aware email templates",
+      "Timing recommendations",
+      "Professional tone customization"
+    ]
+  },
+  {
+    icon: <Video className="w-6 h-6 text-indigo-500" />,
+    title: "Mock Interviews",
+    description: "Simulate real interview scenarios with industry-specific questions and receive detailed performance analytics. Practice technical, behavioral, and case interviews with personalized feedback to help you improve.",
+    imageUrl: "https://placehold.co/600x400/4f46e5/ffffff?text=Mock+Interview",
+    benefits: [
+      "Industry-tailored interview simulations",
+      "Performance metrics and insights",
+      "Improvement tracking over time"
+    ]
+  },
+  {
+    icon: <Blocks className="w-6 h-6 text-orange-500" />,
+    title: "Job Application Tracker",
+    description: "Stay organized with our intelligent tracking system that provides insights and reminders for your job applications. Never miss a follow-up or deadline, and gain insights into your application success patterns.",
+    imageUrl: "https://placehold.co/600x400/4f46e5/ffffff?text=Job+Tracker",
+    benefits: [
+      "Centralized application management",
+      "Smart follow-up reminders",
+      "Success rate analytics"
+    ]
+  }
+];
+
+const Home: React.FC = () => {
+  const [isWaitlistModalOpen, setIsWaitlistModalOpen] = useState(false);
+  const [expandedFaq, setExpandedFaq] = useState<number | null>(null);
+
+  const toggleFaq = (index: number) => {
+    setExpandedFaq(expandedFaq === index ? null : index);
+  };
+
+  return (
+    <div className="bg-white dark:bg-gray-900">
+      {/* Hero Section */}
+      <header className="relative overflow-hidden">
+        {/* Background elements */}
+        <div className="absolute inset-0 -z-10">
+          <div className="absolute top-0 right-0 w-full h-full bg-gradient-to-br from-blue-50 to-indigo-100 dark:from-blue-900/20 dark:to-indigo-900/20 opacity-70"></div>
+          <div className="absolute -top-40 -left-40 w-80 h-80 bg-purple-300/30 dark:bg-purple-900/30 rounded-full filter blur-xl opacity-70 animate-blob"></div>
+          <div className="absolute -top-40 -right-40 w-80 h-80 bg-blue-300/30 dark:bg-blue-900/30 rounded-full filter blur-xl opacity-70 animate-blob animation-delay-2000"></div>
+          <div className="absolute -bottom-40 left-20 w-80 h-80 bg-pink-300/30 dark:bg-pink-900/30 rounded-full filter blur-xl opacity-70 animate-blob animation-delay-4000"></div>
+          
+          {/* Grid pattern overlay */}
+          <div className="absolute inset-0 bg-grid-slate-900/[0.04] dark:bg-grid-slate-100/[0.03] bg-[center_top_-1px] [mask-image:linear-gradient(to_bottom,transparent,black,transparent)]"></div>
+        </div>
+
+        <div className="relative mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 pt-16 pb-20 md:pt-24 md:pb-28 flex flex-col lg:flex-row items-center gap-12">
+          {/* Hero content */}
+          <div className="flex-1 text-center lg:text-left max-w-3xl">
+            <motion.div
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.5 }}
+              className="inline-flex items-center mb-6 px-3 py-1 border border-blue-600/30 dark:border-blue-400/30 rounded-full bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400"
+            >
+              <Star className="w-4 h-4 mr-2" />
+              <span className="text-sm font-medium">Limited Beta Access Now Available</span>
+            </motion.div>
+
+            <motion.h1
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.5, delay: 0.1 }}
+              className="text-5xl md:text-6xl lg:text-7xl font-extrabold mb-6 tracking-tight"
+            >
+              <span className="text-gray-900 dark:text-white">Accelerate Your </span>
+              <span className="bg-clip-text text-transparent bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 dark:from-blue-400 dark:via-indigo-400 dark:to-purple-400">
+                Career Journey
+              </span>
+            </motion.h1>
+
+            <motion.p
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.5, delay: 0.2 }}
+              className="text-xl text-gray-600 dark:text-gray-300 mb-8 max-w-2xl mx-auto lg:mx-0"
+            >
+              Leverage cutting-edge AI to optimize your resume, ace your interviews, and land your dream job faster than ever. CareerQuestAI provides personalized guidance at every step of your job search.
+            </motion.p>
+
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.5, delay: 0.3 }}
+              className="flex flex-col sm:flex-row gap-4 justify-center lg:justify-start"
+            >
+              <motion.button
+                whileHover={{ scale: 1.03 }}
+                whileTap={{ scale: 0.97 }}
+                onClick={() => setIsWaitlistModalOpen(true)}
+                className="inline-flex items-center justify-center px-6 py-4 rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 text-white font-semibold hover:from-blue-700 hover:to-indigo-700 transition-all duration-300 shadow-md hover:shadow-xl shadow-blue-500/20"
+              >
+                <Rocket className="w-5 h-5 mr-2" />
+                Join the Waitlist
+                <ChevronRight className="w-5 h-5 ml-1" />
+              </motion.button>
+              <motion.a
+                whileHover={{ scale: 1.03 }}
+                whileTap={{ scale: 0.97 }}
+                href="#features"
+                className="inline-flex items-center justify-center px-6 py-4 rounded-xl border-2 border-gray-200 dark:border-gray-700 text-gray-800 dark:text-gray-200 font-semibold hover:bg-gray-50 dark:hover:bg-gray-800 transition-all duration-300"
+              >
+                See How It Works
+                <ArrowRight className="w-5 h-5 ml-2" />
+              </motion.a>
+            </motion.div>
+          </div>
+
+          {/* Hero image/preview */}
+          <motion.div
+            initial={{ opacity: 0, scale: 0.9 }}
+            animate={{ opacity: 1, scale: 1 }}
+            transition={{ duration: 0.5, delay: 0.3 }}
+            className="flex-1 relative mt-8 lg:mt-0"
+          >
+            <div className="relative mx-auto max-w-md">
+              {/* Mock device frame */}
+              <div className="rounded-2xl shadow-2xl bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 p-1 overflow-hidden">
+                <div className="rounded-xl overflow-hidden border border-gray-100 dark:border-gray-700">
+                  <img 
+                    src="https://placehold.co/600x400/4f46e5/ffffff?text=CareerQuestAI+Dashboard" 
+                    alt="CareerQuestAI Dashboard" 
+                    className="w-full h-auto" 
+                  />
+                </div>
+              </div>
+              
+              {/* Floating elements */}
+              <div className="absolute -bottom-6 -left-12 md:-left-16 w-32 md:w-40 h-auto">
+                <div className="bg-white dark:bg-gray-800 rounded-lg p-3 shadow-lg border border-gray-100 dark:border-gray-700 transform rotate-[-8deg]">
+                  <div className="flex items-center">
+                    <Zap className="text-yellow-500 w-4 h-4" />
+                    <div className="ml-2 text-sm font-medium">Resume Score: 92%</div>
+                  </div>
+                </div>
+              </div>
+              
+              <div className="absolute -top-8 -right-6 md:-right-12 w-28 md:w-36 h-auto">
+                <div className="bg-white dark:bg-gray-800 rounded-lg p-3 shadow-lg border border-gray-100 dark:border-gray-700 transform rotate-[5deg]">
+                  <div className="flex items-center">
+                    <Target className="text-green-500 w-4 h-4" />
+                    <div className="ml-2 text-sm font-medium">Interview Ready!</div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </motion.div>
+        </div>
+        
+        {/* Trusted by companies */}
+        <div className="relative border-t border-gray-200 dark:border-gray-800 bg-gray-50 dark:bg-gray-900/50 py-10">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <p className="text-center text-gray-600 dark:text-gray-400 text-sm font-medium mb-6">TRUSTED BY PROFESSIONALS FROM LEADING COMPANIES</p>
+            <div className="flex flex-wrap justify-center gap-x-12 gap-y-8">
+              {["Google", "Microsoft", "Amazon", "Apple", "Meta", "Netflix"].map((company) => (
+                <div key={company} className="text-gray-400 dark:text-gray-500 font-bold text-xl">
+                  {company}
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      </header>
+
+      {/* Main content sections to be added */}
+      
+      {/* Features Section */}
+      <section id="features" className="py-20">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="text-center mb-16">
+            <motion.span
+              initial={{ opacity: 0, y: 10 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              className="text-blue-600 dark:text-blue-400 font-semibold uppercase tracking-wide"
+            >
+              Powerful Features
+            </motion.span>
+            <motion.h2 
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              className="mt-2 text-4xl font-extrabold text-gray-900 dark:text-white mb-4"
+            >
+              Supercharge Your Job Search
+            </motion.h2>
+            <motion.p 
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              transition={{ delay: 0.2 }}
+              className="text-xl text-gray-600 dark:text-gray-300 max-w-3xl mx-auto"
+            >
+              Everything you need to land your dream job, powered by cutting-edge AI that adapts to your unique skills and career goals
+            </motion.p>
+          </div>
+
+          <div className="space-y-24">
+            {features.slice(0, 3).map((feature, index) => (
+              <motion.div
+                key={feature.title}
+                initial={{ opacity: 0, y: 30 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true, margin: "-100px" }}
+                transition={{ duration: 0.5, delay: index * 0.1 }}
+                className={`flex flex-col ${index % 2 === 1 ? 'lg:flex-row-reverse' : 'lg:flex-row'} gap-12 items-center`}
+              >
+                {/* Feature description */}
+                <div className="flex-1 space-y-6">
+                  <div className="inline-flex items-center justify-center w-12 h-12 rounded-xl bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400">
+                    {feature.icon}
+                  </div>
+                  <h3 className="text-2xl font-bold text-gray-900 dark:text-white">
+                    {feature.title}
+                  </h3>
+                  <p className="text-lg text-gray-600 dark:text-gray-300">
+                    {feature.description}
+                  </p>
+                  <ul className="space-y-2">
+                    {feature.benefits.map((benefit, i) => (
+                      <li key={i} className="flex items-start">
+                        <Check className="w-5 h-5 text-green-500 mr-2 mt-0.5 shrink-0" />
+                        <span className="text-gray-700 dark:text-gray-300">{benefit}</span>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+                
+                {/* Feature screenshot */}
+                <div className="flex-1">
+                  <div className="relative rounded-2xl shadow-2xl bg-white dark:bg-gray-800 p-2 border border-gray-200 dark:border-gray-700">
+                    <div className="absolute top-0 left-0 w-full h-8 bg-gray-100 dark:bg-gray-700 rounded-t-2xl flex items-center px-4">
+                      <div className="flex space-x-2">
+                        <div className="w-3 h-3 bg-red-500 rounded-full"></div>
+                        <div className="w-3 h-3 bg-yellow-500 rounded-full"></div>
+                        <div className="w-3 h-3 bg-green-500 rounded-full"></div>
+                      </div>
+                    </div>
+                    <div className="pt-8 pb-2 overflow-hidden rounded-2xl">
+                      <img 
+                        src={feature.imageUrl} 
+                        alt={feature.title}
+                        className="w-full h-auto rounded-lg"
+                        onError={(e) => {
+                          // Fallback if image doesn't exist
+                          e.currentTarget.src = `https://placehold.co/800x450/4f46e5/ffffff?text=${encodeURIComponent(feature.title)}`;
+                        }}
+                      />
+                    </div>
+                  </div>
+                </div>
+              </motion.div>
+            ))}
+          </div>
+          
+          {/* More features in grid layout */}
+          <div className="mt-24 grid grid-cols-1 md:grid-cols-3 gap-8">
+            {features.slice(3).map((feature, index) => (
+              <motion.div
+                key={feature.title}
+                initial={{ opacity: 0, y: 20 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true }}
+                transition={{ delay: index * 0.1 }}
+                className="group bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-800 dark:to-gray-900 rounded-xl p-6 shadow-lg hover:shadow-xl transition-all duration-300 border border-gray-100 dark:border-gray-700 hover:border-blue-500 dark:hover:border-blue-500"
+              >
+                <div className="w-12 h-12 bg-white dark:bg-gray-700 rounded-lg flex items-center justify-center mb-4 shadow-md group-hover:scale-110 transition-transform duration-300">
+                  {feature.icon}
+                </div>
+                <h3 className="text-xl font-semibold text-gray-900 dark:text-white mb-2 group-hover:text-blue-500 transition-colors duration-300">
+                  {feature.title}
+                </h3>
+                <p className="text-gray-600 dark:text-gray-300 mb-4">
+                  {feature.description.split('.')[0] + '.'}
+                </p>
+                <div className="mt-auto flex justify-end">
+                  <button className="text-blue-600 dark:text-blue-400 font-medium inline-flex items-center">
+                    Learn more
+                    <ChevronRight className="w-4 h-4 ml-1" />
+                  </button>
+                </div>
+              </motion.div>
+            ))}
+          </div>
+        </div>
+      </section>
+      
+      {/* Testimonials Section */}
+      <section className="py-20 bg-gray-50 dark:bg-gray-800">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="text-center mb-16">
+            <motion.span
+              initial={{ opacity: 0, y: 10 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              className="text-blue-600 dark:text-blue-400 font-semibold uppercase tracking-wide"
+            >
+              Success Stories
+            </motion.span>
+            <motion.h2 
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              className="mt-2 text-4xl font-extrabold text-gray-900 dark:text-white mb-4"
+            >
+              From Our Community
+            </motion.h2>
+            <motion.p 
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              transition={{ delay: 0.2 }}
+              className="text-xl text-gray-600 dark:text-gray-300 max-w-3xl mx-auto"
+            >
+              Join thousands of professionals who have accelerated their careers with our AI-powered tools
+            </motion.p>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+            {testimonials.map((testimonial, index) => (
+              <motion.div
+                key={testimonial.name}
+                initial={{ opacity: 0, y: 20 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true }}
+                transition={{ delay: index * 0.1 }}
+                className="bg-white dark:bg-gray-900 rounded-2xl shadow-xl p-8 relative"
+              >
+                {/* Quotation mark */}
+                <div className="absolute -top-4 -left-4 text-blue-500/20 dark:text-blue-400/20 text-6xl font-serif">
+                  "
+                </div>
+                
+                <div className="mb-8">
+                  <p className="text-gray-700 dark:text-gray-300 mb-6 relative z-10">
+                    "{testimonial.content}"
+                  </p>
+                  
+                  <div className="flex items-center">
+                    <img 
+                      src={testimonial.image} 
+                      alt={testimonial.name}
+                      className="w-12 h-12 rounded-full mr-4 border-2 border-blue-500"
+                    />
+                    <div>
+                      <h4 className="font-semibold text-gray-900 dark:text-white">
+                        {testimonial.name}
+                      </h4>
+                      <p className="text-sm text-gray-600 dark:text-gray-400">
+                        {testimonial.role}, {testimonial.company}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+                
+                {/* Results tag */}
+                <div className="absolute bottom-6 right-6 bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-400 text-sm px-3 py-1 rounded-full font-medium">
+                  {testimonial.increase}
+                </div>
+              </motion.div>
+            ))}
+          </div>
+
+          {/* Stats */}
+          <div className="mt-24 grid grid-cols-2 md:grid-cols-4 gap-6">
+            {stats.map((stat, index) => (
+              <motion.div
+                key={stat.label}
+                initial={{ opacity: 0, y: 20 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true }}
+                transition={{ delay: index * 0.1 }}
+                className="bg-white dark:bg-gray-900 rounded-xl shadow-lg p-6 text-center"
+              >
+                <div className="flex justify-center mb-4 text-blue-500 dark:text-blue-400">
+                  {stat.icon}
+                </div>
+                <div className="text-3xl font-extrabold text-gray-900 dark:text-white mb-2">
+                  {stat.value}
+                </div>
+                <div className="text-sm text-gray-600 dark:text-gray-400">
+                  {stat.label}
+                </div>
+              </motion.div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* How It Works Section */}
+      <section className="py-20 bg-white dark:bg-gray-900 overflow-hidden">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="text-center mb-16">
+            <motion.span
+              initial={{ opacity: 0, y: 10 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              className="text-blue-600 dark:text-blue-400 font-semibold uppercase tracking-wide"
+            >
+              The Process
+            </motion.span>
+            <motion.h2 
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              className="mt-2 text-4xl font-extrabold text-gray-900 dark:text-white mb-4"
+            >
+              How CareerQuestAI Works
+            </motion.h2>
+            <motion.p 
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              transition={{ delay: 0.2 }}
+              className="text-xl text-gray-600 dark:text-gray-300 max-w-3xl mx-auto"
+            >
+              A seamless journey from profile creation to landing your dream job
+            </motion.p>
+          </div>
+
+          {/* Process Steps */}
+          <div className="relative">
+            {/* Connection line */}
+            <div className="absolute left-1/2 top-0 bottom-0 w-0.5 bg-blue-200 dark:bg-blue-900/50 transform -translate-x-1/2 hidden md:block"></div>
+            
+            <div className="space-y-16 relative">
+              {processSteps.map((step, index) => (
+                <motion.div
+                  key={step.step}
+                  initial={{ opacity: 0, y: 30 }}
+                  whileInView={{ opacity: 1, y: 0 }}
+                  viewport={{ once: true, margin: "-100px" }}
+                  transition={{ duration: 0.5, delay: index * 0.1 }}
+                  className={`flex flex-col ${index % 2 === 0 ? 'md:flex-row' : 'md:flex-row-reverse'} items-center gap-8`}
+                >
+                  {/* Step content */}
+                  <div className="flex-1 order-2 md:order-none">
+                    <div className={`p-6 bg-gray-50 dark:bg-gray-800 rounded-xl shadow-lg ${index % 2 === 0 ? 'md:pr-16' : 'md:pl-16'}`}>
+                      <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-3">
+                        {step.title}
+                      </h3>
+                      <p className="text-gray-600 dark:text-gray-300">
+                        {step.description}
+                      </p>
+                    </div>
+                  </div>
+                  
+                  {/* Step icon */}
+                  <div className="flex-shrink-0 z-10 order-1 md:order-none">
+                    <div className="w-16 h-16 bg-white dark:bg-gray-800 rounded-full shadow-lg flex items-center justify-center border-4 border-blue-100 dark:border-blue-900/50">
+                      <div className="w-12 h-12 rounded-full bg-blue-500 dark:bg-blue-600 flex items-center justify-center text-white">
+                        {step.icon}
+                      </div>
+                    </div>
+                    {/* Step number */}
+                    <div className="absolute top-0 left-0 w-6 h-6 bg-blue-600 text-white text-xs font-bold rounded-full flex items-center justify-center transform translate-x-6 -translate-y-1">
+                      {step.step}
+                    </div>
+                  </div>
+                </motion.div>
+              ))}
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Pricing Table Section */}
+      <section className="py-20 bg-white dark:bg-gray-900 overflow-hidden">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="text-center mb-16">
+            <motion.span
+              initial={{ opacity: 0, y: 10 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              className="text-blue-600 dark:text-blue-400 font-semibold uppercase tracking-wide"
+            >
+              Simple Pricing
+            </motion.span>
+            <motion.h2 
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              className="mt-2 text-4xl font-extrabold text-gray-900 dark:text-white mb-4"
+            >
+              Choose Your Plan
+            </motion.h2>
+            <motion.p 
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              transition={{ delay: 0.2 }}
+              className="text-xl text-gray-600 dark:text-gray-300 max-w-3xl mx-auto"
+            >
+              Affordable options to supercharge your career journey
+            </motion.p>
+          </div>
+
+          <div className="grid md:grid-cols-2 gap-8 max-w-5xl mx-auto">
+            {/* Free Tier */}
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              className="bg-white dark:bg-gray-800 rounded-2xl overflow-hidden shadow-lg border border-gray-200 dark:border-gray-700 flex flex-col h-full"
+            >
+              <div className="p-8 bg-gray-50 dark:bg-gray-700/50 border-b border-gray-200 dark:border-gray-700">
+                <h3 className="text-2xl font-bold text-gray-900 dark:text-white mb-4">Free</h3>
+                <div className="flex items-baseline">
+                  <span className="text-4xl font-extrabold text-gray-900 dark:text-white">$0</span>
+                  <span className="ml-2 text-gray-600 dark:text-gray-300">/forever</span>
+                </div>
+                <p className="mt-4 text-gray-600 dark:text-gray-300">Basic resume building for those just getting started</p>
+              </div>
+              <div className="p-8 flex-grow">
+                <ul className="space-y-4">
+                  <li className="flex items-start">
+                    <Check className="w-5 h-5 text-green-500 mr-3 flex-shrink-0 mt-0.5" />
+                    <span className="text-gray-700 dark:text-gray-300">Resume Builder Access</span>
+                  </li>
+                  <li className="flex items-start">
+                    <Check className="w-5 h-5 text-green-500 mr-3 flex-shrink-0 mt-0.5" />
+                    <span className="text-gray-700 dark:text-gray-300">Basic Resume Templates</span>
+                  </li>
+                  <li className="flex items-start">
+                    <Check className="w-5 h-5 text-green-500 mr-3 flex-shrink-0 mt-0.5" />
+                    <span className="text-gray-700 dark:text-gray-300">Download PDF Resumes</span>
+                  </li>
+                  <li className="flex items-start opacity-50">
+                    <X className="w-5 h-5 text-red-500 mr-3 flex-shrink-0 mt-0.5" />
+                    <span className="text-gray-500 dark:text-gray-400 line-through">AI Resume Optimization</span>
+                  </li>
+                  <li className="flex items-start opacity-50">
+                    <X className="w-5 h-5 text-red-500 mr-3 flex-shrink-0 mt-0.5" />
+                    <span className="text-gray-500 dark:text-gray-400 line-through">Career Research Tools</span>
+                  </li>
+                  <li className="flex items-start opacity-50">
+                    <X className="w-5 h-5 text-red-500 mr-3 flex-shrink-0 mt-0.5" />
+                    <span className="text-gray-500 dark:text-gray-400 line-through">Interview Preparation</span>
+                  </li>
+                  <li className="flex items-start opacity-50">
+                    <X className="w-5 h-5 text-red-500 mr-3 flex-shrink-0 mt-0.5" />
+                    <span className="text-gray-500 dark:text-gray-400 line-through">Professional Summary AI</span>
+                  </li>
+                </ul>
+              </div>
+              <div className="p-8 pt-0">
+                <button className="w-full py-3 px-6 rounded-lg bg-gray-200 hover:bg-gray-300 text-gray-800 font-semibold transition-colors duration-300">
+                  Get Started Free
+                </button>
+              </div>
+            </motion.div>
+
+            {/* Premium Tier */}
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              transition={{ delay: 0.1 }}
+              className="bg-white dark:bg-gray-800 rounded-2xl overflow-hidden shadow-xl border border-blue-200 dark:border-blue-500/30 flex flex-col h-full relative"
+            >
+              <div className="absolute top-0 right-0">
+                <div className="bg-gradient-to-r from-blue-600 to-indigo-600 text-white text-xs font-bold px-4 py-1 rounded-bl-lg shadow-lg">
+                  BEST VALUE
+                </div>
+              </div>
+              <div className="p-8 bg-gradient-to-r from-blue-500/10 to-indigo-500/10 dark:from-blue-500/20 dark:to-indigo-500/20 border-b border-blue-200 dark:border-blue-500/30">
+                <h3 className="text-2xl font-bold text-gray-900 dark:text-white mb-4">Premium</h3>
+                <div className="flex items-baseline">
+                  <span className="text-4xl font-extrabold text-gray-900 dark:text-white">$9.99</span>
+                  <span className="ml-2 text-gray-600 dark:text-gray-300">one-time payment</span>
+                </div>
+                <p className="mt-4 text-gray-600 dark:text-gray-300">Full access to all AI features and career tools</p>
+              </div>
+              <div className="p-8 flex-grow">
+                <ul className="space-y-4">
+                  <li className="flex items-start">
+                    <Check className="w-5 h-5 text-green-500 mr-3 flex-shrink-0 mt-0.5" />
+                    <span className="text-gray-700 dark:text-gray-300"><strong>Everything in Free</strong></span>
+                  </li>
+                  <li className="flex items-start">
+                    <Check className="w-5 h-5 text-green-500 mr-3 flex-shrink-0 mt-0.5" />
+                    <span className="text-gray-700 dark:text-gray-300">AI Resume Optimization</span>
+                  </li>
+                  <li className="flex items-start">
+                    <Check className="w-5 h-5 text-green-500 mr-3 flex-shrink-0 mt-0.5" />
+                    <span className="text-gray-700 dark:text-gray-300">Advanced Resume Templates</span>
+                  </li>
+                  <li className="flex items-start">
+                    <Check className="w-5 h-5 text-green-500 mr-3 flex-shrink-0 mt-0.5" />
+                    <span className="text-gray-700 dark:text-gray-300">AI Professional Summary Generator</span>
+                  </li>
+                  <li className="flex items-start">
+                    <Check className="w-5 h-5 text-green-500 mr-3 flex-shrink-0 mt-0.5" />
+                    <span className="text-gray-700 dark:text-gray-300">Career Research Tools</span>
+                  </li>
+                  <li className="flex items-start">
+                    <Check className="w-5 h-5 text-green-500 mr-3 flex-shrink-0 mt-0.5" />
+                    <span className="text-gray-700 dark:text-gray-300">Interview Preparation Features</span>
+                  </li>
+                  <li className="flex items-start">
+                    <Check className="w-5 h-5 text-green-500 mr-3 flex-shrink-0 mt-0.5" />
+                    <span className="text-gray-700 dark:text-gray-300">Lifetime Access</span>
+                  </li>
+                </ul>
+              </div>
+              <div className="p-8 pt-0">
+                <motion.button 
+                  whileHover={{ scale: 1.03 }}
+                  whileTap={{ scale: 0.97 }}
+                  className="w-full py-3 px-6 rounded-lg bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white font-semibold shadow-lg transition-all duration-300"
+                >
+                  Get Premium Access
+                </motion.button>
+              </div>
+            </motion.div>
+          </div>
+          
+          <div className="mt-16 text-center">
+            <p className="text-gray-600 dark:text-gray-400 text-lg">Questions about our pricing? <a href="#" className="text-blue-600 dark:text-blue-400 hover:underline">Contact us</a> for more information.</p>
+          </div>
+        </div>
+      </section>
+      
+      {/* FAQ Section */}
+      <section className="py-20 bg-gray-50 dark:bg-gray-800">
+        <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="text-center mb-16">
+            <motion.span
+              initial={{ opacity: 0, y: 10 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              className="text-blue-600 dark:text-blue-400 font-semibold uppercase tracking-wide"
+            >
+              Common Questions
+            </motion.span>
+            <motion.h2 
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              className="mt-2 text-4xl font-extrabold text-gray-900 dark:text-white mb-4"
+            >
+              Frequently Asked Questions
+            </motion.h2>
+            <motion.p 
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              transition={{ delay: 0.2 }}
+              className="text-xl text-gray-600 dark:text-gray-300 max-w-3xl mx-auto"
+            >
+              Everything you need to know about our platform
+            </motion.p>
+          </div>
+
+          <div className="space-y-6">
+            {faqItems.map((faq, index) => (
+              <motion.div
+                key={index}
+                initial={{ opacity: 0, y: 20 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true }}
+                transition={{ delay: index * 0.1 }}
+                className="bg-white dark:bg-gray-900 rounded-xl shadow-md overflow-hidden"
+              >
+                <button
+                  className="w-full px-6 py-5 flex justify-between items-center focus:outline-none"
+                  onClick={() => toggleFaq(index)}
+                >
+                  <h3 className="text-lg font-medium text-gray-900 dark:text-white text-left">
+                    {faq.question}
+                  </h3>
+                  <ChevronRight
+                    className={`w-5 h-5 text-blue-500 transition-transform duration-300 ${
+                      expandedFaq === index ? 'transform rotate-90' : ''
+                    }`}
+                  />
+                </button>
+                {expandedFaq === index && (
+                  <div className="px-6 pb-5">
+                    <motion.div
+                      initial={{ opacity: 0, height: 0 }}
+                      animate={{ opacity: 1, height: 'auto' }}
+                      transition={{ duration: 0.3 }}
+                      className="text-gray-600 dark:text-gray-300"
+                    >
+                      {faq.answer}
+                    </motion.div>
+                  </div>
+                )}
+              </motion.div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* CTA Section */}
+      <section className="py-20 bg-gradient-to-r from-blue-600 to-indigo-600">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            className="max-w-3xl mx-auto"
+          >
+            <div className="bg-white/10 backdrop-blur-lg rounded-2xl p-10 shadow-xl">
+              <h2 className="text-4xl font-bold text-white mb-6">
+                Ready to Transform Your Job Search?
+              </h2>
+              <p className="text-xl text-white/90 mb-10 max-w-2xl mx-auto">
+                Join our exclusive beta program today and get access to all premium features, plus lock in these benefits forever:
+              </p>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-10">
+                {[
+                  { icon: <Zap />, text: "50% Lifetime Discount" },
+                  { icon: <Target />, text: "Early Feature Access" },
+                  { icon: <Shield />, text: "Priority Career Support" }
+                ].map((benefit, index) => (
+                  <motion.div
+                    key={index}
+                    initial={{ opacity: 0, y: 20 }}
+                    whileInView={{ opacity: 1, y: 0 }}
+                    viewport={{ once: true }}
+                    transition={{ delay: index * 0.1 }}
+                    className="bg-white/5 backdrop-blur-lg rounded-xl p-6 flex flex-col items-center"
+                  >
+                    <div className="text-white mb-3 w-10 h-10 flex items-center justify-center">
+                      {benefit.icon}
+                    </div>
+                    <span className="text-white font-medium">{benefit.text}</span>
+                  </motion.div>
+                ))}
+              </div>
+              <motion.div
+                whileHover={{ scale: 1.03 }}
+                whileTap={{ scale: 0.97 }}
+                className="inline-block"
+              >
+                <button
+                  onClick={() => setIsWaitlistModalOpen(true)}
+                  className="px-10 py-5 rounded-xl bg-white text-blue-600 font-bold text-lg hover:bg-gray-100 transition-all duration-300 shadow-lg"
+                >
+                  <div className="flex items-center">
+                    <Rocket className="w-5 h-5 mr-2" />
+                    Join the Waitlist Today
+                    <ChevronRight className="w-5 h-5 ml-2" />
+                  </div>
+                </button>
+              </motion.div>
+            </div>
+          </motion.div>
+        </div>
+      </section>
+      
+      {/* Footer */}
+      <footer className="bg-gray-900 text-gray-400 py-10">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex flex-col md:flex-row justify-between items-center">
+            <div className="mb-6 md:mb-0">
+              <h3 className="text-2xl font-bold text-white mb-2">CareerQuestAI</h3>
+              <p className="text-sm">Accelerate your career journey with AI</p>
+            </div>
+            <div className="flex gap-8 text-sm">
+              <div>Privacy Policy</div>
+              <div>Terms of Service</div>
+              <div>Contact Us</div>
+            </div>
+          </div>
+          <div className="mt-8 pt-8 border-t border-gray-800 text-center text-sm">
+            <p> &copy; {new Date().getFullYear()} CareerQuestAI. All rights reserved.</p>
+          </div>
+        </div>
+      </footer>
+      
+      {/* Waitlist Modal */}
+      <WaitlistModal 
+        isOpen={isWaitlistModalOpen}
+        onClose={() => setIsWaitlistModalOpen(false)}
+      />
+    </div>
+  );
+};
+
+export default Home;

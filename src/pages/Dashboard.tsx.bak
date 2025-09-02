@@ -1,0 +1,1453 @@
+import { useState } from 'react'
+import { Link } from 'react-router-dom'
+import { Edit, FileText, Download, Eye, X } from 'lucide-react'
+import { motion, AnimatePresence } from 'framer-motion'
+import PDFViewer from '../components/PDFViewer'
+
+// Define the ResumeContent interface locally
+interface ResumeContent {
+  id: string;
+  name: string;
+  jobTitle?: string;
+  email?: string;
+  phone?: string;
+  location?: string;
+  website?: string;
+  linkedin?: string;
+  github?: string;
+  summary?: string;
+  experience?: Array<{
+    title?: string;
+    company?: string;
+    employer?: string;
+    location?: string;
+    startDate?: string;
+    endDate?: string;
+    description?: string;
+  }>;
+  education?: Array<{
+    school?: string;
+    degree?: string;
+    fieldOfStudy?: string;
+    startDate?: string;
+    endDate?: string;
+    description?: string;
+  }>;
+  skills?: Array<{name: string} | string>;
+  fileUrl?: string;
+}
+
+export default function Dashboard() {
+  // Static dummy data - using this directly for the demo version
+  const dummyResumeData = {
+    id: "resume-1",
+    name: "Software Engineer Resume",
+    jobTitle: "Senior Software Engineer",
+    email: "developer@example.com",
+    phone: "(555) 123-4567",
+    location: "San Francisco, CA",
+    linkedin: "https://linkedin.com/in/example",
+    github: "https://github.com/example",
+    website: "https://example.com",
+    summary: "Experienced software engineer with expertise in React, TypeScript, and Node.js.",
+    experience: [
+      {
+        title: "Senior Software Engineer",
+        company: "Tech Company",
+        location: "San Francisco, CA",
+        startDate: "Jan 2020",
+        endDate: "Present",
+        description: "Led development of multiple web applications using React and TypeScript."
+      },
+      {
+        title: "Software Engineer",
+        company: "Startup Inc",
+        location: "San Francisco, CA",
+        startDate: "Jun 2018",
+        endDate: "Dec 2019",
+        description: "Developed and maintained frontend applications using React and Redux."
+      }
+    ],
+    education: [
+      {
+        school: "University of California",
+        degree: "B.S.",
+        fieldOfStudy: "Computer Science",
+        startDate: "Sep 2014",
+        endDate: "May 2018",
+        description: "Graduated with honors. Focused on software engineering and web development."
+      }
+    ],
+    skills: ["JavaScript", "TypeScript", "React", "Node.js", "GraphQL", "AWS", "Docker"],
+    fileUrl: "https://example.com/resume.pdf"
+  };
+
+  const [viewingResume, setViewingResume] = useState<ResumeContent | null>(null);
+  const [showResumeModal, setShowResumeModal] = useState<boolean>(false);
+  const [isPdfViewable, setIsPdfViewable] = useState(false);
+
+  const closeResumeModal = () => {
+    setShowResumeModal(false);
+    setViewingResume(null);
+    setIsPdfViewable(false);
+  };
+
+  return (
+    <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-8">Your Job Search Dashboard</h1>
+
+        {/* Demo button to view resume modal */}
+        <div className="mb-8">
+          <button
+            onClick={() => {
+              setViewingResume(dummyResumeData as ResumeContent);
+              setIsPdfViewable(true);
+              setShowResumeModal(true);
+            }}
+            className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors"
+          >
+            View Sample Resume
+          </button>
+        </div>
+import React, { useState, useEffect } from 'react';
+import { Link } from 'react-router-dom';
+import { motion, AnimatePresence } from 'framer-motion';
+import { 
+  Plus, Trash2, Download, 
+  ChevronRight, BarChart2, 
+  Flag, Award, 
+  CheckSquare, Square,
+  XCircle, LineChart,
+  FileText, Edit, Briefcase, Target, Activity, Settings,
+  ListTodo, Eye, X
+} from 'lucide-react';
+import { Interview } from './JobTracker';
+import { useActivity } from '../context/ActivityContext';
+import { useAuth } from '../context/AuthContext';
+
+interface ResumeContent {
+  id: string;
+  name: string;
+  email: string;
+  phone: string;
+  location: string;
+  linkedin?: string;
+  github?: string;
+  website?: string;
+  summary: string;
+  jobTitle?: string;
+  lastUpdated?: string;
+  education: {
+    id?: string;
+    school: string;
+    degree: string;
+    fieldOfStudy?: string;
+    institution?: string;
+    location?: string;
+    startDate: string;
+    endDate: string;
+    highlights?: string[];
+    description?: string;
+  }[];
+  experience: {
+    id?: string;
+    title?: string;
+    jobTitle?: string;
+    company?: string;
+    employer?: string;
+    location?: string;
+    startDate: string;
+    endDate: string;
+    highlights?: string[];
+    description?: string;
+  }[];
+  skills: (string | { id?: string; name: string; level?: number; category?: string })[];
+  projects?: {
+    id?: string;
+    name: string;
+    description: string;
+    technologies: string[];
+    link?: string;
+  }[];
+  certifications?: {
+    id?: string;
+    name: string;
+    issuer: string;
+    date: string;
+    link?: string;
+  }[];
+  fileUrl?: string;
+  templateId?: string;
+  customization?: {
+    primaryColor: string;
+    fontSize: string;
+    fontFamily: string;
+    spacing: string;
+  };
+  metadata?: {
+    createdAt: string;
+    lastModified: string;
+    tags: string[];
+  };
+}
+
+interface DashboardStats {
+  totalApplications: number;
+  activeApplications: number;
+  interviewsScheduled: number;
+  offersReceived: number;
+  rejections: number;
+  applicationRate: number;
+  responseRate: number;
+  skills: { name: string; count: number }[];
+  timeline: { date: string; count: number }[];
+  goals: { id: string; title: string; target: number; current: number; dueDate: string }[];
+  jobMarketInsights: { 
+    inDemandSkills: string[];
+    averageSalary: number;
+    jobGrowth: string;
+    topCompanies: string[];
+    lastUpdated: string;
+  };
+  reminders: { 
+    id: number;
+    text: string;
+    dueDate: string;
+    completed: boolean;
+  }[];
+}
+
+interface Goal {
+  id: string;
+  title: string;
+  target: number;
+  current: number;
+  dueDate: string;
+}
+
+export default function Dashboard() {
+  const [savedResumes, setSavedResumes] = useState<ResumeContent[]>([]);
+  const [interviews, setInterviews] = useState<Interview[]>([]);
+  
+  const [stats, setStats] = useState<DashboardStats>({
+    totalApplications: 0,
+    activeApplications: 0,
+    interviewsScheduled: 0,
+    offersReceived: 0,
+    rejections: 0,
+    applicationRate: 0,
+    responseRate: 0,
+    skills: [],
+    timeline: [],
+    goals: [],
+    jobMarketInsights: {
+      inDemandSkills: [],
+      averageSalary: 0,
+      jobGrowth: '',
+      topCompanies: [],
+      lastUpdated: ''
+    },
+    reminders: []
+  });
+  const [goals, setGoals] = useState<Goal[]>([
+    { id: '1', title: 'Applications Per Week', target: 10, current: 5, dueDate: '2025-04-10' },
+    { id: '2', title: 'Interviews Secured', target: 5, current: 2, dueDate: '2025-04-15' },
+    { id: '3', title: 'Follow-up Emails', target: 15, current: 8, dueDate: '2025-03-25' }
+  ]);
+  const [showGoalForm, setShowGoalForm] = useState(false);
+  const [newGoal, setNewGoal] = useState<{title: string; target: number; dueDate: string}>({
+    title: '',
+    target: 0,
+    dueDate: ''
+  });
+  
+  const [newReminder, setNewReminder] = useState({
+    text: '',
+    dueDate: new Date().toISOString().split('T')[0]
+  });
+
+  const [viewingResume, setViewingResume] = useState<ResumeContent | null>(null);
+  const [showResumeModal, setShowResumeModal] = useState<boolean>(false);
+  const [resumeContent, setResumeContent] = useState<string>('');
+
+  const { user } = useAuth();
+  const { addActivity, activities } = useActivity();
+
+  const calculateStats = (interviewData: Interview[]) => {
+    setStats(prevStats => ({
+      ...prevStats,
+      totalApplications: interviewData.length,
+      activeApplications: interviewData.filter(i => ['upcoming', '1st round completed', 'waiting on final results'].includes(i.status)).length,
+      upcomingInterviews: interviewData.filter(i => i.status === 'upcoming').length,
+      offersReceived: interviewData.filter(i => i.status === 'offer received').length,
+      rejectionRate: interviewData.filter(i => i.status === 'did not get').length
+    }));
+
+    const completedInterviews = interviewData.filter(i => ['did not get', 'offer received'].includes(i.status));
+    const successfulInterviews = interviewData.filter(i => i.status === 'offer received');
+    const responseRate = completedInterviews.length > 0 
+      ? (successfulInterviews.length / completedInterviews.length) * 100 
+      : 0;
+      
+    setStats(prevStats => ({
+      ...prevStats,
+      responseRate: Math.round(responseRate)
+    }));
+  };
+
+  useEffect(() => {
+    // Load saved resumes
+    const savedResumesData = localStorage.getItem('savedResumes');
+    if (savedResumesData) {
+      try {
+        const resumes = JSON.parse(savedResumesData);
+        setSavedResumes(resumes);
+      } catch (error) {
+        console.error('Error parsing saved resumes:', error);
+      }
+    }
+
+    // Load interviews
+    const savedInterviews = localStorage.getItem('interviews');
+    if (savedInterviews) {
+      try {
+        const interviewData = JSON.parse(savedInterviews);
+        setInterviews(interviewData);
+        calculateStats(interviewData);
+      } catch (error) {
+        console.error('Error parsing interviews:', error);
+      }
+    }
+
+    // Load saved reminders
+    const savedReminders = localStorage.getItem('jobReminders');
+    if (savedReminders) {
+      try {
+        const reminders = JSON.parse(savedReminders);
+        setStats(prevStats => ({
+          ...prevStats,
+          reminders
+        }));
+      } catch (error) {
+        console.error('Error parsing reminders:', error);
+      }
+    }
+  }, []);
+
+  const downloadResume = (resume: ResumeContent) => {
+    console.log('Downloading resume:', resume.name);
+    // Placeholder for actual download functionality
+    alert(`Downloading resume for ${resume.name}`);
+  };
+
+  const deleteResume = (id: string) => {
+    // Confirm before deleting
+    if (window.confirm('Are you sure you want to delete this resume? This action cannot be undone.')) {
+      // Get current resumes from localStorage
+      const savedResumes = JSON.parse(localStorage.getItem('savedResumes') || '[]');
+      
+      // Filter out the resume to delete
+      const updatedResumes = savedResumes.filter((resume: ResumeContent) => resume.id !== id);
+      
+      // Save back to localStorage
+      localStorage.setItem('savedResumes', JSON.stringify(updatedResumes));
+      
+      // Update the state to reflect the change
+      setSavedResumes(updatedResumes);
+      
+      // Add activity record
+      addActivity('resume', `Deleted resume`);
+    }
+  };
+
+  const addGoal = () => {
+    if (!newGoal.title || newGoal.target <= 0 || !newGoal.dueDate) return;
+    
+    const goal: Goal = {
+      id: Date.now().toString(),
+      title: newGoal.title,
+      target: newGoal.target,
+      current: 0,
+      dueDate: newGoal.dueDate
+    };
+    
+    setGoals([...goals, goal]);
+    setNewGoal({ title: '', target: 0, dueDate: '' });
+    setShowGoalForm(false);
+    
+    // Save to localStorage
+    localStorage.setItem('jobGoals', JSON.stringify([...goals, goal]));
+  };
+  
+  const updateGoalProgress = (id: string, newCurrent: number) => {
+    const updatedGoals = goals.map(goal => 
+      goal.id === id ? { ...goal, current: newCurrent } : goal
+    );
+    setGoals(updatedGoals);
+    localStorage.setItem('jobGoals', JSON.stringify(updatedGoals));
+  };
+  
+  const deleteGoal = (id: string) => {
+    const updatedGoals = goals.filter(goal => goal.id !== id);
+    setGoals(updatedGoals);
+    localStorage.setItem('jobGoals', JSON.stringify(updatedGoals));
+  };
+
+  const addReminder = () => {
+    if (!newReminder.text || !newReminder.dueDate) return;
+    
+    const reminder = {
+      id: Date.now(),
+      text: newReminder.text,
+      dueDate: new Date(newReminder.dueDate).toISOString(),
+      completed: false
+    };
+
+    setStats(prevStats => {
+      const updatedStats = {
+        ...prevStats,
+        reminders: [...prevStats.reminders, reminder]
+      };
+      
+      // Save to local storage
+      localStorage.setItem('jobReminders', JSON.stringify(updatedStats.reminders));
+      
+      return updatedStats;
+    });
+    
+    // Reset form
+    setNewReminder({
+      text: '',
+      dueDate: new Date().toISOString().split('T')[0]
+    });
+  };
+
+  const toggleReminderStatus = (id: number) => {
+    setStats(prevStats => {
+      const updatedReminders = prevStats.reminders.map(reminder => 
+        reminder.id === id ? { ...reminder, completed: !reminder.completed } : reminder
+      );
+      
+      const updatedStats = {
+        ...prevStats,
+        reminders: updatedReminders
+      };
+      
+      // Save to local storage
+      localStorage.setItem('jobReminders', JSON.stringify(updatedReminders));
+      
+      return updatedStats;
+    });
+  };
+
+  const deleteReminder = (id: number) => {
+    setStats(prevStats => {
+      const updatedReminders = prevStats.reminders.filter(reminder => reminder.id !== id);
+      
+      const updatedStats = {
+        ...prevStats,
+        reminders: updatedReminders
+      };
+      
+      // Save to local storage
+      localStorage.setItem('jobReminders', JSON.stringify(updatedReminders));
+      
+      return updatedStats;
+    });
+  };
+
+  const closeResumeModal = () => {
+    setShowResumeModal(false);
+    setViewingResume(null);
+    setResumeContent('');
+  };
+
+  // Enhanced function to get resume content with error handling and fallbacks
+  const getResumeContent = (resumeId: string): string => {
+    try {
+      const content = localStorage.getItem(`resume-content-${resumeId}`);
+      
+      if (!content) {
+        console.log(`No stored content found for resume ID: ${resumeId}`);
+        return '';
+      }
+      
+      // Check if content is meaningful (not just a placeholder or error message)
+      if (content.length < 30 || 
+          content.includes("Could not extract content") || 
+          content.includes("Reading file content")) {
+        console.log(`Found invalid content for resume ID: ${resumeId}`);
+        return '';
+      }
+      
+      console.log(`Found valid content for resume ID: ${resumeId}, length: ${content.length}`);
+      return content;
+    } catch (error) {
+      console.error('Error retrieving resume content:', error);
+      return '';
+    }
+  };
+
+  // Updated function to view resume content with logging
+  const viewResume = (resume: ResumeContent) => {
+    console.log('Viewing resume:', resume.name, 'ID:', resume.id);
+    setViewingResume(resume);
+    
+    // If there's a fileUrl, try to get the stored content from localStorage
+    if (resume.fileUrl) {
+      console.log('Resume has fileUrl, attempting to retrieve content');
+      const content = getResumeContent(resume.id);
+      setResumeContent(content);
+      console.log('Content retrieved, length:', content.length);
+    } else {
+      setResumeContent('');
+    }
+    
+    setShowResumeModal(true);
+  };
+
+  return (
+    <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <div className="flex justify-between items-center mb-6">
+          <h1 className="text-3xl font-bold text-gray-900 dark:text-gray-100">
+            Welcome back, {user?.user_metadata.name || 'User'}! 👋
+          </h1>
+          <Link 
+            to="/settings"
+            className="flex items-center px-4 py-2 text-sm font-medium text-gray-700 bg-white dark:bg-gray-800 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700"
+          >
+            <Settings className="w-4 h-4 mr-2" />
+            Settings
+          </Link>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5, delay: 0.1 }}
+            className="bg-gradient-to-br from-blue-500 to-blue-600 rounded-xl p-6 text-white shadow-lg"
+          >
+            <div className="flex items-center justify-between mb-4">
+              <div className="p-2 bg-blue-400 bg-opacity-30 rounded-lg">
+                <Briefcase className="w-6 h-6" />
+              </div>
+              <span className="text-sm font-medium">Total Applications</span>
+            </div>
+            <p className="text-3xl font-bold">{stats.totalApplications}</p>
+            <div className="mt-2 text-blue-100 text-sm">
+              +{stats.applicationRate.toFixed(1)} per week
+            </div>
+          </motion.div>
+
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5, delay: 0.2 }}
+            className="bg-gradient-to-br from-purple-500 to-purple-600 rounded-xl p-6 text-white shadow-lg"
+          >
+            <div className="flex items-center justify-between mb-4">
+              <div className="p-2 bg-purple-400 bg-opacity-30 rounded-lg">
+                <Activity className="w-6 h-6" />
+              </div>
+              <span className="text-sm font-medium">Active Applications</span>
+            </div>
+            <p className="text-3xl font-bold">{stats.activeApplications}</p>
+            <div className="mt-2 text-purple-100 text-sm">
+              {stats.interviewsScheduled} interviews scheduled
+            </div>
+          </motion.div>
+
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5, delay: 0.3 }}
+            className="bg-gradient-to-br from-green-500 to-green-600 rounded-xl p-6 text-white shadow-lg"
+          >
+            <div className="flex items-center justify-between mb-4">
+              <div className="p-2 bg-green-400 bg-opacity-30 rounded-lg">
+                <Target className="w-6 h-6" />
+              </div>
+              <span className="text-sm font-medium">Success Rate</span>
+            </div>
+            <p className="text-3xl font-bold">{stats.responseRate}%</p>
+            <div className="mt-2 text-green-100 text-sm">
+              {stats.offersReceived} offers received
+            </div>
+          </motion.div>
+
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5, delay: 0.4 }}
+            className="bg-gradient-to-br from-orange-500 to-orange-600 rounded-xl p-6 text-white shadow-lg"
+          >
+            <div className="flex items-center justify-between mb-4">
+              <div className="p-2 bg-orange-400 bg-opacity-30 rounded-lg">
+                <BarChart2 className="w-6 h-6" />
+              </div>
+              <span className="text-sm font-medium">Response Rate</span>
+            </div>
+            <p className="text-3xl font-bold">{Math.round(stats.responseRate)}%</p>
+            <div className="mt-2 text-orange-100 text-sm">
+              {stats.rejections} responses received
+            </div>
+          </motion.div>
+        </div>
+
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+          <motion.div 
+            initial={{ opacity: 0, x: -20 }}
+            animate={{ opacity: 1, x: 0 }}
+            transition={{ duration: 0.5, delay: 0.5 }}
+            className="lg:col-span-2"
+          >
+            <div className="bg-white dark:bg-gray-800 rounded-xl shadow-lg p-6 mb-8">
+              <div className="flex justify-between items-center mb-6">
+                <h2 className="text-xl font-bold text-gray-900 dark:text-gray-100">Recent Activity</h2>
+                <Link 
+                  to="/activity"
+                  className="text-sm text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 flex items-center"
+                >
+                  View All
+                  <ChevronRight className="w-4 h-4 ml-1" />
+                </Link>
+              </div>
+              <div className="space-y-4">
+                {activities && activities.slice(0, 5).map((activity: any, index: number) => (
+                  <motion.div
+                    key={index}
+                    initial={{ opacity: 0, x: -20 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    transition={{ duration: 0.3, delay: index * 0.1 }}
+                    className="flex items-center p-4 bg-gray-50 dark:bg-gray-700 rounded-lg"
+                  >
+                    {activity.type === 'resume' ? (
+                      <FileText className="w-5 h-5 text-blue-500 mr-3" />
+                    ) : (
+                      <Briefcase className="w-5 h-5 text-purple-500 mr-3" />
+                    )}
+                    <div>
+                      <p className="text-gray-800 dark:text-gray-200">{activity.action}</p>
+                      <p className="text-sm text-gray-500 dark:text-gray-400">
+                        {new Date(activity.timestamp).toLocaleDateString()}
+                      </p>
+                    </div>
+                  </motion.div>
+                ))}
+              </div>
+            </div>
+
+            <div className="bg-white dark:bg-gray-800 rounded-xl shadow-lg p-6">
+              <div className="flex justify-between items-center mb-6">
+                <h2 className="text-xl font-bold text-gray-900 dark:text-gray-100">Your Resumes</h2>
+                <Link 
+                  to="/build"
+                  className="flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors duration-300"
+                >
+                  <Plus className="w-4 h-4 mr-2" />
+                  Create New
+                </Link>
+              </div>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {savedResumes.map((resume) => (
+                  <motion.div
+                    key={resume.id}
+                    initial={{ opacity: 0, scale: 0.95 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    className="bg-gray-50 dark:bg-gray-700 p-4 rounded-lg hover:shadow-md transition-shadow duration-300"
+                  >
+                    <div className="flex justify-between items-start mb-2">
+                      <div>
+                        <h3 className="font-semibold text-gray-800 dark:text-gray-200">{resume.name}</h3>
+                        <p className="text-sm text-gray-600 dark:text-gray-400">{resume.jobTitle}</p>
+                      </div>
+                      <span className="text-xs text-gray-500 dark:text-gray-400">
+                        Last updated: {resume.lastUpdated || 'Unknown'}
+                      </span>
+                    </div>
+                    <div className="flex space-x-2 mt-4">
+                      <Link
+                        to={`/build?resumeId=${resume.id}`}
+                        className="p-2 text-blue-600 hover:bg-blue-100 dark:hover:bg-blue-900 rounded-lg transition-colors duration-300"
+                        title="Edit"
+                      >
+                        <Edit className="w-4 h-4" />
+                      </Link>
+                      <button
+                        className="p-2 text-green-600 hover:bg-green-100 dark:hover:bg-green-900 rounded-lg transition-colors duration-300"
+                        title="View"
+                        onClick={() => viewResume(resume)}
+                      >
+                        <Eye className="w-4 h-4" />
+                      </button>
+                      <button
+                        className="p-2 text-red-600 hover:bg-red-100 dark:hover:bg-red-900 rounded-lg transition-colors duration-300"
+                        title="Delete"
+                        onClick={() => deleteResume(resume.id)}
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </button>
+                      <button
+                        className="p-2 text-green-600 hover:bg-green-100 dark:hover:bg-green-900 rounded-lg transition-colors duration-300"
+                        title="Download"
+                        onClick={() => downloadResume(resume)}
+                      >
+                        <Download className="w-4 h-4" />
+                      </button>
+                    </div>
+                  </motion.div>
+                ))}
+              </div>
+            </div>
+          </motion.div>
+
+          <motion.div
+            initial={{ opacity: 0, x: 20 }}
+            animate={{ opacity: 1, x: 0 }}
+            transition={{ duration: 0.5, delay: 0.6 }}
+            className="space-y-6"
+          >
+            <div className="bg-white dark:bg-gray-800 rounded-xl shadow-lg p-6">
+              <div className="flex justify-between items-center mb-6">
+                <h2 className="text-xl font-bold text-gray-900 dark:text-gray-100">Quick Actions</h2>
+                <Link 
+                  to="/build"
+                  className="flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors duration-300"
+                >
+                  <Plus className="w-4 h-4 mr-2" />
+                  Create New Resume
+                </Link>
+              </div>
+              <div className="space-y-3">
+                <Link
+                  to="/build"
+                  className="flex items-center p-3 bg-gray-50 dark:bg-gray-700 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-600 transition-colors duration-300"
+                >
+                  <div className="p-2 bg-blue-100 dark:bg-blue-900 rounded-lg mr-3">
+                    <FileText className="w-5 h-5 text-blue-600 dark:text-blue-400" />
+                  </div>
+                  <span className="text-gray-800 dark:text-gray-200">Create New Resume</span>
+                </Link>
+                <Link
+                  to="/job-tracker"
+                  className="flex items-center p-3 bg-gray-50 dark:bg-gray-700 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-600 transition-colors duration-300"
+                >
+                  <div className="p-2 bg-purple-100 dark:bg-purple-900 rounded-lg mr-3">
+                    <Briefcase className="w-5 h-5 text-purple-600 dark:text-purple-400" />
+                  </div>
+                  <span className="text-gray-800 dark:text-gray-200">Track New Application</span>
+                </Link>
+                <Link
+                  to="/preparation"
+                  className="flex items-center p-3 bg-gray-50 dark:bg-gray-700 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-600 transition-colors duration-300"
+                >
+                  <div className="p-2 bg-green-100 dark:bg-green-900 rounded-lg mr-3">
+                    <Target className="w-5 h-5 text-green-600 dark:text-green-400" />
+                  </div>
+                  <span className="text-gray-800 dark:text-gray-200">Practice Interview</span>
+                </Link>
+              </div>
+            </div>
+
+            <div className="bg-white dark:bg-gray-800 rounded-xl shadow-lg p-6">
+              <div className="flex justify-between items-center mb-6">
+                <h2 className="text-xl font-bold text-gray-900 dark:text-gray-100">Upcoming Interviews</h2>
+                <Link 
+                  to="/job-tracker"
+                  className="text-sm text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 flex items-center"
+                >
+                  View All
+                  <ChevronRight className="w-4 h-4 ml-1" />
+                </Link>
+              </div>
+              <div className="space-y-4">
+                {interviews
+                  .filter(interview => interview.status === 'upcoming')
+                  .slice(0, 3)
+                  .map((interview) => (
+                    <motion.div
+                      key={interview.id}
+                      initial={{ opacity: 0, y: 10 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ duration: 0.3 }}
+                      className="p-4 bg-gray-50 dark:bg-gray-700 rounded-lg"
+                    >
+                      <div className="flex justify-between items-start">
+                        <div>
+                          <h3 className="font-semibold text-gray-800 dark:text-gray-200">{interview.company}</h3>
+                          <p className="text-sm text-gray-600 dark:text-gray-400">{interview.position}</p>
+                        </div>
+                        <span className="text-xs text-gray-500 dark:text-gray-400">
+                          {interview.date ? new Date(interview.date).toLocaleDateString() : 'No date'}
+                        </span>
+                      </div>
+                    </motion.div>
+                  ))}
+              </div>
+            </div>
+          </motion.div>
+        </div>
+
+        {/* Goal Tracking Section */}
+        <motion.div 
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5, delay: 0.7 }}
+          className="bg-white dark:bg-gray-800 rounded-xl shadow-lg p-6 mb-8 mt-8"
+        >
+          <div className="flex justify-between items-center mb-6">
+            <h2 className="text-xl font-bold text-gray-900 dark:text-gray-100">Goal Tracking</h2>
+            <button
+              onClick={() => setShowGoalForm(!showGoalForm)}
+              className="flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors duration-300"
+            >
+              <Plus className="w-4 h-4 mr-2" />
+              Add Goal
+            </button>
+          </div>
+
+          {/* Goal Form */}
+          <AnimatePresence>
+            {showGoalForm && (
+              <motion.div 
+                initial={{ opacity: 0, height: 0 }}
+                animate={{ opacity: 1, height: 'auto' }}
+                exit={{ opacity: 0, height: 0 }}
+                className="bg-gray-50 dark:bg-gray-700 p-4 rounded-lg mb-6"
+              >
+                <h3 className="font-medium mb-4 text-gray-800 dark:text-gray-200">Add New Goal</h3>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                      Goal Title
+                    </label>
+                    <input
+                      type="text"
+                      value={newGoal.title}
+                      onChange={(e) => setNewGoal({...newGoal, title: e.target.value})}
+                      className="w-full p-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100"
+                      placeholder="e.g., Applications Per Week"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                      Target Number
+                    </label>
+                    <input
+                      type="number"
+                      value={newGoal.target || ''}
+                      onChange={(e) => setNewGoal({...newGoal, target: parseInt(e.target.value) || 0})}
+                      className="w-full p-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100"
+                      placeholder="e.g., 10"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                      Due Date
+                    </label>
+                    <input
+                      type="date"
+                      value={newGoal.dueDate}
+                      onChange={(e) => setNewGoal({...newGoal, dueDate: e.target.value})}
+                      className="w-full p-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100"
+                    />
+                  </div>
+                </div>
+                <div className="flex justify-end mt-4 space-x-2">
+                  <button
+                    onClick={() => setShowGoalForm(false)}
+                    className="px-4 py-2 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600 rounded-lg transition-colors duration-300"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    onClick={addGoal}
+                    className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors duration-300"
+                  >
+                    Add Goal
+                  </button>
+                </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
+
+          {/* Goals List */}
+          <div className="space-y-4">
+            {goals.length === 0 ? (
+              <p className="text-gray-500 dark:text-gray-400 text-center py-4">
+                No goals set yet. Add a goal to start tracking your job search progress.
+              </p>
+            ) : (
+              goals.map((goal) => {
+                const progress = Math.min(Math.round((goal.current / goal.target) * 100), 100);
+                const isOverdue = new Date(goal.dueDate) < new Date();
+                const isCompleted = goal.current >= goal.target;
+                
+                return (
+                  <motion.div 
+                    key={goal.id}
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    className="bg-gray-50 dark:bg-gray-700 p-4 rounded-lg"
+                  >
+                    <div className="flex flex-col md:flex-row md:items-center justify-between mb-2">
+                      <div className="flex items-center">
+                        <Flag className={`w-5 h-5 mr-2 ${isCompleted ? 'text-green-500' : isOverdue ? 'text-red-500' : 'text-blue-500'}`} />
+                        <h3 className="font-medium text-gray-800 dark:text-gray-200">
+                          {goal.title}
+                          {isCompleted && <span className="ml-2 text-xs bg-green-100 text-green-800 py-1 px-2 rounded-full">Completed</span>}
+                          {isOverdue && !isCompleted && <span className="ml-2 text-xs bg-red-100 text-red-800 py-1 px-2 rounded-full">Overdue</span>}
+                        </h3>
+                      </div>
+                      <div className="flex items-center mt-2 md:mt-0">
+                        <span className="text-sm text-gray-600 dark:text-gray-400 mr-2">Due: {new Date(goal.dueDate).toLocaleDateString()}</span>
+                        <button
+                          onClick={() => deleteGoal(goal.id)}
+                          className="p-1 text-red-600 hover:bg-red-100 dark:hover:bg-red-900 rounded-full transition-colors duration-300 ml-2"
+                          title="Delete Goal"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </button>
+                      </div>
+                    </div>
+                    
+                    <div className="mt-2">
+                      <div className="flex justify-between items-center text-sm mb-1">
+                        <span className="text-gray-600 dark:text-gray-400">Progress: {goal.current} of {goal.target}</span>
+                        <span className="font-medium text-gray-800 dark:text-gray-200">{progress}%</span>
+                      </div>
+                      <div className="w-full bg-gray-200 dark:bg-gray-600 rounded-full h-2.5">
+                        <div 
+                          className={`h-2.5 rounded-full ${
+                            isCompleted 
+                              ? 'bg-green-500' 
+                              : isOverdue 
+                                ? 'bg-red-500' 
+                                : 'bg-blue-500'
+                          }`}
+                          style={{ width: `${progress}%` }}
+                        ></div>
+                      </div>
+                    </div>
+                    
+                    <div className="flex items-center justify-between mt-3">
+                      <div className="flex items-center space-x-1">
+                        <button 
+                          onClick={() => updateGoalProgress(goal.id, Math.max(0, goal.current - 1))}
+                          className={`mt-0.5 ${
+                            goal.current <= 0 ? 'text-gray-400' : 'text-gray-600 hover:text-gray-700 dark:hover:text-gray-500'
+                          }`}
+                          disabled={goal.current <= 0}
+                        >
+                          <span className="text-xl font-bold">-</span>
+                        </button>
+                        <input
+                          type="number"
+                          value={goal.current}
+                          onChange={(e) => updateGoalProgress(goal.id, parseInt(e.target.value) || 0)}
+                          className="w-16 p-1 text-center border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100"
+                        />
+                        <button
+                          onClick={() => updateGoalProgress(goal.id, goal.current + 1)}
+                          className="p-1 text-gray-600 hover:text-gray-700 dark:hover:text-gray-500"
+                        >
+                          <span className="text-xl font-bold">+</span>
+                        </button>
+                      </div>
+                    </div>
+                  </motion.div>
+                );
+              })
+            )}
+          </div>
+        </motion.div>
+
+        {/* Skills Section */}
+        <div className="bg-white dark:bg-gray-800 p-6 rounded-xl shadow-sm">
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="text-xl font-bold text-gray-800 dark:text-white flex items-center gap-2">
+              <Award size={20} className="text-blue-500" />
+              Skills & Technologies
+            </h2>
+          </div>
+
+          {stats.skills.length > 0 ? (
+            <div className="space-y-4">
+              {stats.skills.map((skill, index) => (
+                <div key={index} className="relative">
+                  <div className="flex justify-between mb-1">
+                    <span className="text-sm font-medium text-gray-700 dark:text-gray-300">{skill.name}</span>
+                    <span className="text-xs text-gray-500 dark:text-gray-400">Used {skill.count} times</span>
+                  </div>
+                  <div className="w-full bg-gray-200 dark:bg-gray-600 rounded-full h-2.5">
+                    <div 
+                      className="bg-blue-500 h-2.5 rounded-full" 
+                      style={{ width: `${Math.min(100, (skill.count / Math.max(...stats.skills.map(s => s.count))) * 100)}%` }}
+                    ></div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <div className="text-center p-6">
+              <p className="text-gray-500 dark:text-gray-400">No skills data available yet. Add skills to your job applications to track them here.</p>
+            </div>
+          )}
+        </div>
+
+        {/* Timeline Section */}
+        <div className="bg-white dark:bg-gray-800 p-6 rounded-xl shadow-sm">
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="text-xl font-bold text-gray-800 dark:text-white flex items-center gap-2">
+              <LineChart size={20} className="text-green-500" />
+              Application Timeline
+            </h2>
+          </div>
+
+          {stats.timeline.length > 0 ? (
+            <div>
+              <div className="flex items-end h-[200px] gap-2">
+                {stats.timeline.map((item, index) => {
+                  const maxValue = Math.max(...stats.timeline.map(i => i.count));
+                  const heightPercentage = (item.count / maxValue) * 100;
+                  
+                  return (
+                    <div key={index} className="flex flex-col items-center flex-1">
+                      <div 
+                        className="w-full bg-green-200 dark:bg-green-600 rounded-t-sm hover:bg-green-300 dark:hover:bg-green-700 transition"
+                        style={{height: `${heightPercentage}%`}}
+                      >
+                        <div className="h-full w-full flex items-center justify-center">
+                          <span className="text-xs font-semibold text-green-800 dark:text-green-200">{item.count}</span>
+                        </div>
+                      </div>
+                      <div className="text-xs mt-2 text-gray-600 dark:text-gray-400 w-full text-center">{item.date}</div>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          ) : (
+            <div className="text-center p-6">
+              <p className="text-gray-500 dark:text-gray-400">No timeline data available yet. Add job applications to view your progress over time.</p>
+            </div>
+          )}
+        </div>
+
+        {/* Job Market Insights */}
+        <div className="bg-white dark:bg-gray-800 p-6 rounded-xl shadow-sm">
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="text-xl font-bold text-gray-800 dark:text-white flex items-center gap-2">
+              <BarChart2 size={20} className="text-purple-500" />
+              Job Market Insights
+            </h2>
+          </div>
+
+          <div className="space-y-6">
+            <div>
+              <h3 className="font-medium text-gray-700 dark:text-gray-300 mb-2">In-Demand Skills</h3>
+              <div className="flex flex-wrap gap-2">
+                {stats.jobMarketInsights.inDemandSkills.map((skill, index) => (
+                  <span key={index} className="bg-purple-100 dark:bg-purple-900 text-purple-800 dark:text-purple-200 text-xs px-3 py-1 rounded-full">
+                    {skill}
+                  </span>
+                ))}
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="bg-gray-50 dark:bg-gray-700 p-4 rounded-lg">
+                <div className="text-sm text-gray-500 dark:text-gray-400">Average Salary</div>
+                <div className="text-xl font-bold text-gray-800 dark:text-white">${stats.jobMarketInsights.averageSalary.toLocaleString()}</div>
+              </div>
+              <div className="bg-gray-50 dark:bg-gray-700 p-4 rounded-lg">
+                <div className="text-sm text-gray-500 dark:text-gray-400">Job Growth</div>
+                <div className="text-xl font-bold text-green-600 dark:text-green-400">{stats.jobMarketInsights.jobGrowth}</div>
+              </div>
+            </div>
+
+            <div>
+              <h3 className="font-medium text-gray-700 dark:text-gray-300 mb-2">Top Hiring Companies</h3>
+              <ul className="space-y-2">
+                {stats.jobMarketInsights.topCompanies.map((company, index) => (
+                  <li key={index} className="flex items-center">
+                    <ChevronRight size={16} className="text-purple-500 mr-2" />
+                    <span className="text-gray-700 dark:text-gray-300">{company}</span>
+                  </li>
+                ))}
+              </ul>
+            </div>
+
+            <div className="text-xs text-gray-500 dark:text-gray-400 mt-4">
+              Last updated: {stats.jobMarketInsights.lastUpdated}
+            </div>
+          </div>
+        </div>
+
+        {/* Reminders Section */}
+        <div className="bg-white dark:bg-gray-800 p-6 rounded-xl shadow-sm">
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="text-xl font-bold text-gray-800 dark:text-white flex items-center gap-2">
+              <ListTodo size={20} className="text-amber-500" />
+              Reminders & Notes
+            </h2>
+          </div>
+
+          <div className="space-y-4">
+            <div className="flex flex-col space-y-2">
+              <input
+                type="text"
+                placeholder="Add a new reminder..."
+                value={newReminder.text}
+                onChange={e => setNewReminder({...newReminder, text: e.target.value})}
+                className="p-3 border rounded-lg focus:ring-2 focus:ring-blue-500"
+              />
+              <div className="flex space-x-2">
+                <input
+                  type="date"
+                  value={newReminder.dueDate}
+                  onChange={e => setNewReminder({...newReminder, dueDate: e.target.value})}
+                  className="p-3 border rounded-lg focus:ring-2 focus:ring-blue-500"
+                />
+                <button
+                  onClick={addReminder}
+                  className="px-4 py-2 bg-amber-500 text-white rounded-lg hover:bg-amber-600 transition-colors duration-300"
+                >
+                  Add
+                </button>
+              </div>
+            </div>
+
+            <div className="space-y-2 mt-4">
+              {stats.reminders.length > 0 ? (
+                stats.reminders.map(reminder => {
+                  const dueDate = reminder.dueDate ? new Date(reminder.dueDate) : null;
+                  const isPastDue = dueDate && dueDate < new Date() && !reminder.completed;
+                  
+                  return (
+                    <div 
+                      key={reminder.id}
+                      className={`p-3 rounded-lg border flex items-start justify-between ${
+                        reminder.completed 
+                          ? 'bg-gray-50 dark:bg-gray-700 border-gray-200 dark:border-gray-600' 
+                          : isPastDue 
+                            ? 'bg-red-50 dark:bg-red-900/20 border-red-200 dark:border-red-800' 
+                            : 'bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700'
+                      }`}
+                    >
+                      <div className="flex items-start gap-3">
+                        <button 
+                          onClick={() => toggleReminderStatus(reminder.id)}
+                          className={`mt-0.5 ${
+                            reminder.completed ? 'text-green-500 hover:text-green-600' : 'text-gray-400 hover:text-gray-500'
+                          }`}
+                        >
+                          {reminder.completed ? <CheckSquare size={18} /> : <Square size={18} />}
+                        </button>
+                        <div>
+                          <p className={`${
+                            reminder.completed ? 'line-through text-gray-500 dark:text-gray-400' : 'text-gray-800 dark:text-white'
+                          }`}>
+                            {reminder.text}
+                          </p>
+                          <p className={`text-xs ${
+                            isPastDue ? 'text-red-500' : 'text-gray-500 dark:text-gray-400'
+                          }`}>
+                            Due: {dueDate ? dueDate.toLocaleDateString() : 'No date'}
+                            {isPastDue && ' (Overdue)'}
+                          </p>
+                        </div>
+                      </div>
+                      <button 
+                        onClick={() => deleteReminder(reminder.id)}
+                        className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
+                      >
+                        <XCircle size={18} />
+                      </button>
+                    </div>
+                  );
+                })
+              ) : (
+                <div className="text-center p-4">
+                  <p className="text-gray-500 dark:text-gray-400">No reminders yet. Add one above to get started.</p>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+
+        {/* Resume View Modal */}
+        <AnimatePresence>
+          {showResumeModal && viewingResume && (
+            <motion.div
+              className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={closeResumeModal}
+            >
+              <motion.div
+                className="bg-white dark:bg-gray-800 rounded-xl shadow-xl w-full max-w-4xl max-h-[90vh] overflow-hidden"
+                initial={{ scale: 0.9, opacity: 0 }}
+                animate={{ scale: 1, opacity: 1 }}
+                exit={{ scale: 0.9, opacity: 0 }}
+                onClick={e => e.stopPropagation()}
+              >
+                <div className="flex justify-between items-center p-4 border-b dark:border-gray-700">
+                  <h2 className="text-xl font-bold text-gray-900 dark:text-gray-100">
+                    {viewingResume.name}
+                  </h2>
+                  <button 
+                    onClick={closeResumeModal}
+                    className="p-1 rounded-full hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors"
+                  >
+                    <X className="w-5 h-5 text-gray-500 dark:text-gray-400" />
+                  </button>
+                </div>
+                
+                <div className="p-6 overflow-y-auto max-h-[calc(90vh-100px)]">
+                  {viewingResume.fileUrl ? (
+                    // If the resume has a file URL (uploaded PDF), display its content
+                    <div className="flex flex-col items-center">
+                      <div className="mb-4 p-4 bg-blue-50 dark:bg-blue-900/20 rounded-lg text-gray-800 dark:text-gray-200 text-center w-full">
+                        <p className="font-medium">
+                          {resumeContent 
+                            ? "This resume was uploaded as a file. Below is the extracted text content." 
+                            : "This resume was uploaded as a file, but we couldn't extract the text content."
+                          }
+                        </p>
+                      </div>
+                      <div className="w-full flex flex-col space-y-5">
+                        {resumeContent ? (
+                          <>
+                            <div className="w-full h-[70vh] overflow-y-auto border border-gray-200 dark:border-gray-700 rounded-lg bg-white dark:bg-gray-900 p-6">
+                              <div className="prose dark:prose-invert max-w-none">
+                                {/* Format the extracted content with paragraphs and line breaks */}
+                                {resumeContent.split('\n\n').map((paragraph, idx) => (
+                                  paragraph.trim() ? (
+                                    <p key={idx} className="mb-3 text-gray-800 dark:text-gray-200">
+                                      {paragraph.split('\n').map((line, lineIdx) => (
+                                        <React.Fragment key={lineIdx}>
+                                          {line}
+                                          {lineIdx < paragraph.split('\n').length - 1 && <br />}
+                                        </React.Fragment>
+                                      ))}
+                                    </p>
+                                  ) : null
+                                ))}
+                              </div>
+                            </div>
+                            <div className="flex justify-between">
+                              <a 
+                                href={viewingResume.fileUrl} 
+                                download={`${viewingResume.name}.pdf`}
+                                className="px-4 py-2 bg-gray-600 text-white rounded-md hover:bg-gray-700 transition-colors inline-flex items-center"
+                              >
+                                <Download className="w-4 h-4 mr-2" /> Download Original
+                              </a>
+                              <Link
+                                to={`/build?resumeId=${viewingResume.id}`}
+                                className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors inline-flex items-center"
+                              >
+                                <Edit className="w-4 h-4 mr-2" /> Edit in Builder
+                              </Link>
+                            </div>
+                          </>
+                        ) : (
+                          <div className="text-center p-8 border border-gray-200 dark:border-gray-700 rounded-lg bg-gray-50 dark:bg-gray-800">
+                            <FileText size={64} className="mx-auto mb-4 text-gray-400 dark:text-gray-500" />
+                            <h3 className="text-xl font-medium text-gray-800 dark:text-gray-200 mb-2">Resume Content Unavailable</h3>
+                            <p className="text-gray-500 dark:text-gray-400 mb-4">
+                              We couldn't extract text from this resume file. This can happen with certain PDF formats or if the PDF contains mainly images.
+                            </p>
+                            <div className="flex flex-col sm:flex-row gap-3 justify-center mt-4">
+                              <a
+                                href={viewingResume.fileUrl}
+                                target="_blank"
+                                rel="noopener noreferrer" 
+                                className="px-4 py-2 bg-gray-600 text-white rounded-md hover:bg-gray-700 transition-colors inline-flex items-center justify-center"
+                              >
+                                <Eye className="w-4 h-4 mr-2" /> View Original
+                              </a>
+                              <Link
+                                to={`/build?resumeId=${viewingResume.id}`}
+                                className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors inline-flex items-center justify-center"
+                              >
+                                <Edit className="w-4 h-4 mr-2" /> Edit in Builder
+                              </Link>
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  ) : (
+                    // Otherwise, display resume information in a structured format
+                    <div className="space-y-6">
+                      <div>
+                        <h3 className="text-lg font-semibold text-gray-800 dark:text-gray-200 mb-2">
+                          {viewingResume.jobTitle || 'Job Title Not Specified'}
+                        </h3>
+                        <p className="text-gray-600 dark:text-gray-400">
+                          {viewingResume.email} | {viewingResume.phone} | {viewingResume.location}
+                        </p>
+                        {(viewingResume.linkedin || viewingResume.github || viewingResume.website) && (
+                          <div className="flex flex-wrap gap-3 mt-2 text-sm text-blue-600 dark:text-blue-400">
+                            {viewingResume.linkedin && <a href={viewingResume.linkedin} target="_blank" rel="noopener noreferrer">LinkedIn</a>}
+                            {viewingResume.github && <a href={viewingResume.github} target="_blank" rel="noopener noreferrer">GitHub</a>}
+                            {viewingResume.website && <a href={viewingResume.website} target="_blank" rel="noopener noreferrer">Website</a>}
+                          </div>
+                        )}
+                      </div>
+                      
+                      {viewingResume.summary && (
+                        <div>
+                          <h4 className="font-semibold text-gray-800 dark:text-gray-200 mb-2">Summary</h4>
+                          <p className="text-gray-700 dark:text-gray-300">{viewingResume.summary}</p>
+                        </div>
+                      )}
+                      
+                      {viewingResume.experience && viewingResume.experience.length > 0 && (
+                        <div>
+                          <h4 className="font-semibold text-gray-800 dark:text-gray-200 mb-2">Experience</h4>
+                          <div className="space-y-4">
+                            {viewingResume.experience.map((exp, index) => (
+                              <div key={index} className="border-l-2 border-gray-200 dark:border-gray-700 pl-4">
+                                <h5 className="font-medium">{exp.title || exp.jobTitle} at {exp.company || exp.employer}</h5>
+                                <p className="text-sm text-gray-600 dark:text-gray-400">
+                                  {exp.startDate} - {exp.endDate} | {exp.location}
+                                </p>
+                                <div className="mt-1 text-gray-700 dark:text-gray-300" 
+                                     dangerouslySetInnerHTML={{ __html: exp.description || '' }} />
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+                      
+                      {viewingResume.education && viewingResume.education.length > 0 && (
+                        <div>
+                          <h4 className="font-semibold text-gray-800 dark:text-gray-200 mb-2">Education</h4>
+                          <div className="space-y-4">
+                            {viewingResume.education.map((edu, index) => (
+                              <div key={index} className="border-l-2 border-gray-200 dark:border-gray-700 pl-4">
+                                <h5 className="font-medium">{edu.degree} in {edu.fieldOfStudy}</h5>
+                                <p className="text-sm">{edu.school}</p>
+                                <p className="text-sm text-gray-600 dark:text-gray-400">
+                                  {edu.startDate} - {edu.endDate}
+                                </p>
+                                <div className="mt-1 text-gray-700 dark:text-gray-300" 
+                                     dangerouslySetInnerHTML={{ __html: edu.description || '' }} />
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+                      
+                      {viewingResume.skills && viewingResume.skills.length > 0 && (
+                        <div>
+                          <h4 className="font-semibold text-gray-800 dark:text-gray-200 mb-2">Skills</h4>
+                          <div className="flex flex-wrap gap-2">
+                            {viewingResume.skills.map((skill, index) => (
+                              <span key={index} className="px-3 py-1 bg-gray-100 dark:bg-gray-700 rounded-full text-sm">
+                                {typeof skill === 'string' ? skill : skill.name}
+                              </span>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  )}
+                </div>
+                
+                <div className="flex justify-end gap-2 p-4 border-t dark:border-gray-700">
+                  <button
+                    onClick={closeResumeModal}
+                    className="px-4 py-2 bg-gray-200 dark:bg-gray-700 text-gray-800 dark:text-gray-200 rounded-md hover:bg-gray-300 dark:hover:bg-gray-600 transition-colors"
+                  >
+                    Close
+                  </button>
+                  <Link
+                    to={`/build?resumeId=${viewingResume.id}`}
+                    className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors"
+                  >
+                    Edit
+                  </Link>
+                </div>
+              </motion.div>
+            </motion.div>
+          )}
+        </AnimatePresence>
+
+        <div className="bg-white dark:bg-gray-800 p-6 rounded-xl shadow-sm">
+          <div className="flex justify-between items-center mb-6">
+            <h2 className="text-lg font-medium text-gray-900 dark:text-white">Job Applications</h2>
+            <Link 
+              to="/job-tracker" 
+              className="text-blue-600 dark:text-blue-400 hover:underline flex items-center text-sm"
+            >
+              View all <ChevronRight className="h-4 w-4" />
+            </Link>
+          </div>
+          <div className="space-y-3">
+            {interviews.length > 0 ? (
+              <>
+                <AnimatePresence>
+                  {interviews.slice(0, 3).map((interview) => (
+                    <motion.div
+                      key={interview.id}
+                      initial={{ opacity: 0, y: 20 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ duration: 0.3 }}
+                      className="bg-white dark:bg-gray-800 p-4 rounded-lg shadow-sm"
+                    >
+                    <div className="flex justify-between items-start">
+                      <div>
+                        <h3 className="font-medium text-gray-900 dark:text-white">{interview.company}</h3>
+                        <p className="text-sm text-gray-600 dark:text-gray-400">{interview.position}</p>
+                      </div>
+                      <span className="text-xs text-gray-500 dark:text-gray-400">
+                        {interview.date ? new Date(interview.date).toLocaleDateString() : 'No date'}
+                      </span>
+                    </div>
+                      <div className="mt-2">
+                        <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
+                          interview.status === 'upcoming' ? 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-300' :
+                          interview.status === 'offer received' ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300' :
+                          interview.status === 'did not get' ? 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-300' :
+                          'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300'
+                        }`}>
+                          {interview.status}
+                        </span>
+                      </div>
+                    </motion.div>
+                  ))}
+                </AnimatePresence>
+                {interviews.length > 3 && (
+                  <Link
+                    to="/job-tracker"
+                    className="block text-center text-blue-600 dark:text-blue-400 hover:underline text-sm mt-4"
+                  >
+                    View all {interviews.length} applications
+                  </Link>
+                )}
+              </>
+            ) : (
+              <div className="text-center py-8">
+                <p className="text-gray-500 dark:text-gray-400 mb-4">No job applications yet.</p>
+                <Link
+                  to="/job-tracker"
+                  className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 dark:bg-blue-500 dark:hover:bg-blue-600"
+                >
+                  Add your first application
+                </Link>
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+};
