@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '../lib/supabaseClient';
+import { sendDiscordNotification } from '../lib/discordWebhook';
 import { Loader, AlertCircle } from 'lucide-react';
 
 const Signup = () => {
@@ -69,6 +70,13 @@ const Signup = () => {
           console.error('Error updating user metadata:', updateError);
           // Continue even if metadata update fails
         }
+
+        // Send Discord notification
+        await sendDiscordNotification({
+          email: user.email || email,
+          name: fullName,
+          signup_method: 'email'
+        });
       }
       
       setSuccessMessage('Account created successfully! Redirecting to Dashboard...');
