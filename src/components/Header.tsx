@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { FileText, LogIn, LogOut, Menu, X } from 'lucide-react'
-import DarkModeToggle from './DarkModeToggle'
 import { useAuth } from '../context/AuthContext'
 import { supabase } from '../lib/supabaseClient'
 
@@ -89,7 +88,6 @@ const Header: React.FC = () => {
               <NavItems />
             </ul>
           )}
-          <DarkModeToggle />
           {user ? (
             <button
               onClick={handleSignOut}
@@ -109,8 +107,7 @@ const Header: React.FC = () => {
           )}
         </nav>
         <div className="md:hidden flex items-center">
-          <DarkModeToggle />
-          <button onClick={toggleMenu} className="ml-4 text-gray-600 dark:text-gray-300 focus:outline-none">
+          <button onClick={toggleMenu} className="text-gray-600 dark:text-gray-300 focus:outline-none">
             {isMenuOpen ? <X size={24} /> : <Menu size={24} />}
           </button>
         </div>
