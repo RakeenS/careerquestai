@@ -32,15 +32,34 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       
       // Check if this is a new signup (especially for Google OAuth)
       if (event === 'SIGNED_IN' && currentUser && session) {
+        console.log('Auth event: SIGNED_IN', {
+          userId: currentUser.id,
+          email: currentUser.email,
+          createdAt: currentUser.created_at,
+          provider: currentUser.app_metadata?.provider
+        });
+        
         // Check if this is a new user by looking at created_at vs current time
         const userCreatedAt = new Date(currentUser.created_at);
         const now = new Date();
         const timeDiff = now.getTime() - userCreatedAt.getTime();
         const isNewUser = timeDiff < 60000; // Less than 1 minute old = new signup
         
+        console.log('New user check:', {
+          userCreatedAt: userCreatedAt.toISOString(),
+          now: now.toISOString(),
+          timeDiff,
+          isNewUser
+        });
+        
         if (isNewUser) {
           // Determine signup method
           const signupMethod = currentUser.app_metadata?.provider === 'google' ? 'google' : 'email';
+          
+          console.log('Sending Discord notification for new user:', {
+            email: currentUser.email,
+            signupMethod
+          });
           
           // Send Discord notification for new signups
           await sendDiscordNotification({
