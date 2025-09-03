@@ -77,10 +77,26 @@ const Signup = () => {
     <div className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-gray-900 px-4">
       <div className="w-full max-w-md p-8 bg-white dark:bg-gray-800 rounded-xl shadow-md">
         <div className="text-center mb-6">
-          <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Create Your Account</h1>
-          <p className="mt-2 text-gray-600 dark:text-gray-400">
-            Sign up to get started with CareerQuestAI
+          <div className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-300 mb-3">
+            🎉 100% FREE - No Credit Card Required
+          </div>
+          <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">
+            Start Your Career Journey
+          </h1>
+          <p className="text-gray-600 dark:text-gray-400 mb-2">
+            Join thousands who've landed their dream jobs with AI-powered tools
           </p>
+          <div className="flex items-center justify-center space-x-4 text-sm text-gray-500 dark:text-gray-400">
+            <span className="flex items-center">
+              ✅ AI Resume Builder
+            </span>
+            <span className="flex items-center">
+              ✅ Interview Prep
+            </span>
+            <span className="flex items-center">
+              ✅ Job Tracking
+            </span>
+          </div>
         </div>
         
         {successMessage && (
@@ -108,8 +124,8 @@ const Signup = () => {
                 type="text"
                 value={fullName}
                 onChange={(e) => setFullName(e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white"
-                placeholder="John Doe"
+                className="w-full px-3 py-3 border border-gray-300 dark:border-gray-600 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white transition-all"
+                placeholder="Enter your full name"
                 required
               />
             </div>
@@ -123,8 +139,8 @@ const Signup = () => {
                 type="email"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white"
-                placeholder="john@example.com"
+                className="w-full px-3 py-3 border border-gray-300 dark:border-gray-600 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white transition-all"
+                placeholder="your.email@company.com"
                 required
               />
             </div>
@@ -138,13 +154,13 @@ const Signup = () => {
                 type="password"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white"
-                placeholder="••••••••"
+                className="w-full px-3 py-3 border border-gray-300 dark:border-gray-600 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white transition-all"
+                placeholder="Create a secure password"
                 required
                 minLength={8}
               />
               <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
-                Password must be at least 8 characters
+                🔒 Minimum 8 characters for security
               </p>
             </div>
           </div>
@@ -152,17 +168,25 @@ const Signup = () => {
           <button
             type="submit"
             disabled={isSubmitting}
-            className="w-full mt-6 py-2.5 px-4 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700 transition-colors disabled:opacity-70 flex items-center justify-center"
+            className="w-full mt-6 py-3 px-4 bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-lg font-semibold hover:from-blue-700 hover:to-purple-700 transition-all duration-200 disabled:opacity-70 flex items-center justify-center shadow-lg hover:shadow-xl transform hover:scale-[1.02]"
           >
             {isSubmitting ? (
               <>
                 <Loader size={16} className="animate-spin mr-2" />
-                Creating Account...
+                Creating Your Free Account...
               </>
             ) : (
-              'Create Account'
+              <>
+                🚀 Get Free Access Now
+              </>
             )}
           </button>
+          
+          <div className="mt-4 text-center">
+            <p className="text-xs text-gray-500 dark:text-gray-400">
+              🔒 Your data is secure • 🚫 No spam • ⚡ Instant access
+            </p>
+          </div>
         </form>
         
         <div className="mt-6 text-center">
@@ -172,9 +196,15 @@ const Signup = () => {
               onClick={() => navigate('/login')}
               className="text-blue-600 dark:text-blue-400 font-medium hover:underline"
             >
-              Log in
+              Sign in here
             </button>
           </p>
+          
+          <div className="mt-4 pt-4 border-t border-gray-200 dark:border-gray-700">
+            <p className="text-xs text-gray-500 dark:text-gray-400">
+              Trusted by job seekers worldwide • Free forever • No hidden fees
+            </p>
+          </div>
         </div>
       </div>
     </div>
