@@ -31,9 +31,17 @@ import {
 
 // Import images
 import dashboardImage from '../assets/screenshots/dashboard.png';
-import interviewImage from '../assets/screenshots/interview.png';
-import atsImage from '../assets/screenshots/ATS.png';
-import resumeBuilderImage from '../assets/screenshots/resumebuilder.png';
+
+// Feature interface
+interface Feature {
+  icon: React.ReactNode;
+  title: string;
+  description: string;
+  imageUrl?: string;
+  videoUrl?: string;
+  benefits: string[];
+  comingSoon?: boolean;
+}
 
 // Testimonials data (currently unused but kept for future reference)
 // @ts-ignore - Keeping this data for potential future use
@@ -147,12 +155,12 @@ const faqItems = [
 ];
 
 // Feature data with more detailed descriptions
-const features = [
+const features: Feature[] = [
   {
     icon: <Wand2 className="w-6 h-6 text-blue-500" />,
     title: "AI Resume Optimization",
     description: "Our advanced AI analyzes your resume against job descriptions, optimizing content and formatting to increase your interview chances by up to 70%. We identify missing keywords, suggest improvements, and ensure your resume passes through Applicant Tracking Systems.",
-    imageUrl: atsImage,
+    videoUrl: "/score.mp4",
     benefits: [
       "Keyword optimization for ATS systems",
       "Tailored content suggestions for each job",
@@ -163,7 +171,7 @@ const features = [
     icon: <Bot className="w-6 h-6 text-purple-500" />,
     title: "AI Interview Coach",
     description: "Practice with our intelligent AI interviewer that adapts to your responses, providing real-time feedback and personalized improvement suggestions. Prepare for behavioral, technical, and situational questions across different industries.",
-    imageUrl: interviewImage,
+    videoUrl: "/mock.mp4",
     benefits: [
       "Real-time feedback on your responses",
       "Industry-specific question preparation",
@@ -174,7 +182,7 @@ const features = [
     icon: <FileText className="w-6 h-6 text-green-500" />,
     title: "Smart Resume Builder",
     description: "Create ATS-friendly resumes with our intelligent builder featuring modern templates and real-time optimization suggestions. Our AI helps you craft compelling descriptions, highlight relevant skills, and format your resume professionally.",
-    imageUrl: resumeBuilderImage,
+    videoUrl: "/opt.mp4",
     benefits: [
       "Modern, professionally designed templates",
       "AI-powered content suggestions",
@@ -533,15 +541,26 @@ const Home: React.FC = () => {
                       </div>
                     </div>
                     <div className="pt-8 pb-2 overflow-hidden rounded-2xl">
-                      <img 
-                        src={feature.imageUrl} 
-                        alt={feature.title}
-                        className="w-full h-auto rounded-lg"
-                        onError={(e) => {
-                          // Fallback if image doesn't exist
-                          e.currentTarget.src = `https://placehold.co/800x450/4f46e5/ffffff?text=${encodeURIComponent(feature.title)}`;
-                        }}
-                      />
+                      {feature.videoUrl ? (
+                        <video 
+                          src={feature.videoUrl}
+                          className="w-full h-auto rounded-lg"
+                          autoPlay
+                          loop
+                          muted
+                          playsInline
+                        />
+                      ) : (
+                        <img 
+                          src={feature.imageUrl} 
+                          alt={feature.title}
+                          className="w-full h-auto rounded-lg"
+                          onError={(e) => {
+                            // Fallback if image doesn't exist
+                            e.currentTarget.src = `https://placehold.co/800x450/4f46e5/ffffff?text=${encodeURIComponent(feature.title)}`;
+                          }}
+                        />
+                      )}
                     </div>
                   </div>
                 </div>
