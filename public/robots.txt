@@ -1,0 +1,26 @@
+User-agent: *
+Allow: /
+
+# Important pages for crawling
+Allow: /
+Allow: /login
+Allow: /signup
+Allow: /privacy-policy
+Allow: /terms-of-service
+Allow: /contact
+
+# Block admin and sensitive areas
+Disallow: /dashboard
+Disallow: /settings
+Disallow: /resume-builder
+Disallow: /jobs
+Disallow: /job-tracker
+Disallow: /preparation
+Disallow: /premium
+Disallow: /api/
+
+# Sitemap location
+Sitemap: https://careerquestai.vercel.app/sitemap.xml
+
+# Crawl delay (optional - helps prevent server overload)
+Crawl-delay: 1

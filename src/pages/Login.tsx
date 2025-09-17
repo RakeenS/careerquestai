@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { Mail, Lock, AlertCircle, Loader, CheckCircle } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
+import SEO from '../components/SEO';
 
 const Login: React.FC = () => {
   const [email, setEmail] = useState('');
@@ -64,7 +65,15 @@ const Login: React.FC = () => {
   }, [user, navigate]);
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-gray-900 px-4">
+    <>
+      <SEO 
+        title="Login - CareerQuestAI"
+        description="Sign in to your CareerQuestAI account to access AI-powered resume builder, interview preparation, and career tools. Create your free account today."
+        keywords="login, sign in, CareerQuestAI account, resume builder login, career tools access"
+        url="https://careerquestai.vercel.app/login"
+        noIndex={true}
+      />
+      <div className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-gray-900 px-4">
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
@@ -163,6 +172,7 @@ const Login: React.FC = () => {
         </form>
       </motion.div>
     </div>
+    </>
   );
 };
 

@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { useAuth } from '../context/AuthContext';
+import SEO from '../components/SEO';
 import {
   Check,
   ChevronRight,
@@ -252,7 +253,15 @@ const Home: React.FC = () => {
 
   // One unified home page for everyone
   return (
-    <div className="bg-gray-900 min-h-screen">
+    <>
+      <SEO 
+        title="CareerQuestAI - AI-Powered Resume Builder & Career Tools"
+        description="Create ATS-friendly resumes with AI, practice interviews, track job applications, and accelerate your career with CareerQuestAI. Free AI-powered career tools for job seekers."
+        keywords="AI resume builder, ATS resume, career tools, job search, interview preparation, resume optimization, AI career assistant, job tracker, professional resume, free resume builder"
+        url="https://careerquestai.vercel.app/"
+        type="website"
+      />
+      <div className="bg-gray-900 min-h-screen">
       {/* Hero Section */}
       <header className="relative overflow-hidden">
         {/* Background elements */}
@@ -998,6 +1007,7 @@ const Home: React.FC = () => {
         </div>
       )}
     </div>
+    </>
   );
 };
 

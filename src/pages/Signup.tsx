@@ -1,8 +1,9 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { supabase } from '../lib/supabaseClient';
-import { sendDiscordNotification } from '../lib/discordWebhook';
-import { Loader, AlertCircle } from 'lucide-react';
+import { motion } from 'framer-motion';
+import { Mail, Lock, AlertCircle, Loader, CheckCircle } from 'lucide-react';
+import { useAuth } from '../context/AuthContext';
+import SEO from '../components/SEO';
 
 const Signup = () => {
   const [email, setEmail] = useState('');

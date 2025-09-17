@@ -1,0 +1,49 @@
+<svg width="1200" height="630" viewBox="0 0 1200 630" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <!-- Background -->
+  <rect width="1200" height="630" fill="url(#gradient)"/>
+  
+  <!-- Gradient Definition -->
+  <defs>
+    <linearGradient id="gradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#1F2937;stop-opacity:1" />
+      <stop offset="50%" style="stop-color:#3B82F6;stop-opacity:0.8" />
+      <stop offset="100%" style="stop-color:#8B5CF6;stop-opacity:0.6" />
+    </linearGradient>
+  </defs>
+  
+  <!-- Logo/Icon -->
+  <rect x="100" y="200" width="80" height="80" rx="12" fill="white"/>
+  <rect x="110" y="210" width="60" height="60" rx="8" fill="#3B82F6"/>
+  <rect x="120" y="220" width="40" height="4" rx="2" fill="white"/>
+  <rect x="120" y="230" width="25" height="3" rx="1.5" fill="rgba(255,255,255,0.7)"/>
+  <rect x="120" y="238" width="35" height="3" rx="1.5" fill="rgba(255,255,255,0.7)"/>
+  <rect x="120" y="246" width="20" height="3" rx="1.5" fill="rgba(255,255,255,0.7)"/>
+  <circle cx="150" cy="235" r="6" fill="#10B981"/>
+  <path d="M147 235L149 237L153 233" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+  
+  <!-- Main Title -->
+  <text x="220" y="240" font-family="Arial, sans-serif" font-size="48" font-weight="bold" fill="white">
+    CareerQuestAI
+  </text>
+  
+  <!-- Subtitle -->
+  <text x="220" y="280" font-family="Arial, sans-serif" font-size="24" fill="rgba(255,255,255,0.9)">
+    AI-Powered Resume Builder &amp; Career Tools
+  </text>
+  
+  <!-- Features -->
+  <text x="220" y="320" font-family="Arial, sans-serif" font-size="18" fill="rgba(255,255,255,0.8)">
+    ✓ ATS-Friendly Resumes  ✓ Interview Preparation  ✓ Job Tracking
+  </text>
+  
+  <!-- Call to Action -->
+  <rect x="220" y="350" width="200" height="50" rx="25" fill="white"/>
+  <text x="320" y="380" font-family="Arial, sans-serif" font-size="18" font-weight="bold" fill="#3B82F6" text-anchor="middle">
+    Get Started Free
+  </text>
+  
+  <!-- Decorative Elements -->
+  <circle cx="900" cy="150" r="100" fill="rgba(255,255,255,0.1)"/>
+  <circle cx="1000" cy="400" r="80" fill="rgba(255,255,255,0.08)"/>
+  <circle cx="800" cy="500" r="60" fill="rgba(255,255,255,0.06)"/>
+</svg>

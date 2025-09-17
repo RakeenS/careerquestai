@@ -1,6 +1,7 @@
 import { useState, useEffect, lazy, Suspense } from 'react'
-import { Route, Routes, Navigate } from 'react-router-dom'
+import { Route, Routes } from 'react-router-dom'
 import { Analytics } from '@vercel/analytics/react'
+import { HelmetProvider } from 'react-helmet-async'
 import Header from './components/Header'
 import Footer from './components/Footer'
 import Home from './pages/Home'
@@ -87,11 +88,12 @@ function App() {
   // Normal app render with error boundaries
   try {
     return (
-      <DarkModeProvider>
-        <div className="flex flex-col min-h-screen bg-gray-100 dark:bg-gray-900 transition-colors duration-300">
-          <Header />
-          <main className="flex-grow container mx-auto px-4 py-8">
-            <Routes>
+      <HelmetProvider>
+        <DarkModeProvider>
+          <div className="flex flex-col min-h-screen bg-gray-100 dark:bg-gray-900 transition-colors duration-300">
+            <Header />
+            <main className="flex-grow container mx-auto px-4 py-8">
+              <Routes>
               {/* Public routes - only login and signup */}
               <Route path="/login" element={<Login />} />
               <Route path="/signup" element={<Signup />} />
@@ -184,6 +186,7 @@ function App() {
           <Analytics />
         </div>
       </DarkModeProvider>
+      </HelmetProvider>
     )
   } catch (err) {
     console.error('App render error:', err)
