@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FB Ad Creative 1 - Job Market Stats</title>
+    <style>
+        body { margin: 0; font-family: 'Arial', sans-serif; }
+        .ad-container {
+            width: 1200px;
+            height: 628px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            position: relative;
+            overflow: hidden;
+        }
+        .content {
+            text-align: center;
+            z-index: 2;
+            max-width: 800px;
+            padding: 40px;
+        }
+        .stat-number {
+            font-size: 72px;
+            font-weight: bold;
+            color: #FFD700;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+            margin-bottom: 10px;
+        }
+        .stat-text {
+            font-size: 24px;
+            margin-bottom: 20px;
+            font-weight: 600;
+        }
+        .headline {
+            font-size: 36px;
+            font-weight: bold;
+            margin-bottom: 20px;
+            text-shadow: 1px 1px 2px rgba(0,0,0,0.3);
+        }
+        .subtext {
+            font-size: 20px;
+            margin-bottom: 30px;
+            opacity: 0.9;
+        }
+        .cta-button {
+            background: #FF6B6B;
+            color: white;
+            padding: 15px 40px;
+            font-size: 22px;
+            font-weight: bold;
+            border: none;
+            border-radius: 50px;
+            cursor: pointer;
+            box-shadow: 0 8px 20px rgba(255,107,107,0.3);
+            transition: transform 0.3s ease;
+        }
+        .cta-button:hover {
+            transform: translateY(-2px);
+        }
+        .free-badge {
+            position: absolute;
+            top: 30px;
+            right: 30px;
+            background: #00FF88;
+            color: #000;
+            padding: 10px 20px;
+            border-radius: 25px;
+            font-weight: bold;
+            font-size: 16px;
+        }
+        .logo {
+            position: absolute;
+            top: 30px;
+            left: 30px;
+            font-size: 24px;
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+    <div class="ad-container">
+        <div class="logo">CareerQuestAI</div>
+        <div class="free-badge">100% FREE</div>
+        <div class="content">
+            <div class="stat-number">75%</div>
+            <div class="stat-text">of resumes never get seen by humans</div>
+            <div class="headline">Beat the ATS System</div>
+            <div class="subtext">AI-powered resume builder that gets you past applicant tracking systems</div>
+            <button class="cta-button">🚀 Get Your Dream Job</button>
+        </div>
+    </div>
+</body>
+</html>

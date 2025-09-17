@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FB Ad Creative 3 - Salary Increase</title>
+    <style>
+        body { margin: 0; font-family: 'Arial', sans-serif; }
+        .ad-container {
+            width: 1200px;
+            height: 628px;
+            background: linear-gradient(135deg, #2C3E50, #3498DB);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            position: relative;
+            text-align: center;
+            padding: 40px;
+            box-sizing: border-box;
+        }
+        .money-emoji {
+            font-size: 80px;
+            margin-bottom: 20px;
+        }
+        .stat-container {
+            background: rgba(255,255,255,0.1);
+            padding: 30px;
+            border-radius: 20px;
+            margin-bottom: 30px;
+            backdrop-filter: blur(10px);
+        }
+        .stat-number {
+            font-size: 64px;
+            font-weight: bold;
+            color: #2ECC71;
+            margin-bottom: 10px;
+        }
+        .stat-text {
+            font-size: 22px;
+            margin-bottom: 15px;
+        }
+        .stat-subtext {
+            font-size: 16px;
+            opacity: 0.8;
+        }
+        .headline {
+            font-size: 38px;
+            font-weight: bold;
+            margin-bottom: 20px;
+            line-height: 1.2;
+        }
+        .subtext {
+            font-size: 20px;
+            margin-bottom: 35px;
+            opacity: 0.9;
+            max-width: 600px;
+        }
+        .cta-button {
+            background: #2ECC71;
+            color: white;
+            padding: 20px 50px;
+            font-size: 22px;
+            font-weight: bold;
+            border: none;
+            border-radius: 50px;
+            cursor: pointer;
+            box-shadow: 0 10px 30px rgba(46,204,113,0.3);
+            animation: pulse 2s infinite;
+        }
+        @keyframes pulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+            100% { transform: scale(1); }
+        }
+        .free-badge {
+            position: absolute;
+            top: 30px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: #E74C3C;
+            color: white;
+            padding: 12px 25px;
+            border-radius: 25px;
+            font-weight: bold;
+            font-size: 16px;
+        }
+        .logo {
+            position: absolute;
+            bottom: 30px;
+            right: 30px;
+            font-size: 18px;
+            font-weight: bold;
+            opacity: 0.8;
+        }
+    </style>
+</head>
+<body>
+    <div class="ad-container">
+        <div class="free-badge">🎉 COMPLETELY FREE</div>
+        <div class="money-emoji">💰</div>
+        <div class="stat-container">
+            <div class="stat-number">$15K</div>
+            <div class="stat-text">Average salary increase</div>
+            <div class="stat-subtext">for users who optimize their resume</div>
+        </div>
+        <div class="headline">Your Next Raise Starts Here</div>
+        <div class="subtext">AI-powered career tools that help you negotiate better salaries and land higher-paying jobs</div>
+        <button class="cta-button">💸 Increase My Salary</button>
+        <div class="logo">CareerQuestAI</div>
+    </div>
+</body>
+</html>

@@ -3,7 +3,7 @@ import { Check, Gift, Star } from 'lucide-react';
 
 const Premium = () => {
   const navigate = useNavigate();
-  
+
   return (
     <div className="container mx-auto max-w-4xl p-6">
       <div className="bg-white dark:bg-gray-800 p-8 rounded-xl shadow-lg">
@@ -29,7 +29,7 @@ const Premium = () => {
             </p>
           </div>
         </div>
-        
+
         <div className="bg-gray-50 dark:bg-gray-700/50 p-6 rounded-lg mb-8">
           <h2 className="text-xl font-semibold text-gray-800 dark:text-gray-200 mb-6 text-center">
             What You Get For FREE
@@ -45,9 +45,9 @@ const Premium = () => {
             <FeatureItem text="Multiple Resume Templates" />
           </div>
         </div>
-        
+
         <div className="text-center">
-          <button 
+          <button
             onClick={() => navigate('/dashboard')}
             className="w-full max-w-md py-4 px-6 bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-lg font-semibold text-lg hover:from-blue-700 hover:to-indigo-700 transition-colors shadow-lg"
           >
