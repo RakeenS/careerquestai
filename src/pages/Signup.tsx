@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { motion } from 'framer-motion';
-import { Mail, Lock, AlertCircle, Loader, CheckCircle } from 'lucide-react';
+import { Loader } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
+import { sendDiscordNotification } from '../lib/discordWebhook';
 import SEO from '../components/SEO';
 
 const Signup = () => {
@@ -13,6 +13,14 @@ const Signup = () => {
   const [errorMessage, setErrorMessage] = useState('');
 
   const navigate = useNavigate();
+  const { signUp, user } = useAuth();
+
+  // Redirect if user is already authenticated
+  useEffect(() => {
+    if (user) {
+      navigate('/dashboard');
+    }
+  }, [user, navigate]);
 
 
 
@@ -25,35 +33,35 @@ const Signup = () => {
       return;
     }
     
+    if (password.length < 6) {
+      setErrorMessage('Password must be at least 6 characters long');
+      return;
+    }
+    
     setIsSubmitting(true);
     setErrorMessage('');
     
     try {
-      // Create user account with minimal required fields
-      const { data, error } = await supabase.auth.signUp({
-        email,
-        password,
-      });
-      
-      if (error) throw error;
-      
-      const user = data.user;
+      // Use the signUp method from AuthContext
+      await signUp(email, password);
       
       // Send Discord notification
-      if (user) {
+      try {
         await sendDiscordNotification({
-          email: user.email || email,
+          email: email,
           name: 'New User',
           signup_method: 'email'
         });
+      } catch (discordError) {
+        console.log('Discord notification failed (non-critical):', discordError);
       }
       
-      setSuccessMessage('Account created successfully! Redirecting to Dashboard...');
+      setSuccessMessage('Account created successfully! Please check your email to verify your account.');
       
       // Redirect to dashboard after short delay
       setTimeout(() => {
         navigate('/dashboard');
-      }, 2000);
+      }, 3000);
       
     } catch (error) {
       console.error('Error signing up:', error);
@@ -64,7 +72,15 @@ const Signup = () => {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-gray-900 px-4">
+    <>
+      <SEO 
+        title="Sign Up - CareerQuestAI"
+        description="Create your free CareerQuestAI account and access AI-powered resume builder, interview preparation, and career tools. Join thousands who've landed their dream jobs."
+        keywords="sign up, create account, CareerQuestAI registration, free resume builder, career tools"
+        url="https://careerquestai.vercel.app/signup"
+        noIndex={true}
+      />
+      <div className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-gray-900 px-4">
       <div className="w-full max-w-md p-8 bg-white dark:bg-gray-800 rounded-xl shadow-md">
         <div className="text-center mb-6">
           <div className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-300 mb-3">
@@ -183,6 +199,7 @@ const Signup = () => {
         </div>
       </div>
     </div>
+    </>
   );
 };
 

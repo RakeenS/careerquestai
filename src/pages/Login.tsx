@@ -8,10 +8,9 @@ import SEO from '../components/SEO';
 const Login: React.FC = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [isSignUp, setIsSignUp] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
-  const { signIn, signUp, user } = useAuth();
+  const { signIn, user } = useAuth();
   const navigate = useNavigate();
 
   const validateForm = () => {
@@ -34,15 +33,8 @@ const Login: React.FC = () => {
     
     setIsLoading(true);
     try {
-      if (isSignUp) {
-        await signUp(email, password);
-        // Show success message for sign up
-        setError('Account created! Please check your email to verify your account.');
-        setIsSignUp(false);
-      } else {
-        await signIn(email, password);
-        navigate('/dashboard');
-      }
+      await signIn(email, password);
+      navigate('/dashboard');
     } catch (error: any) {
       console.error('Auth error:', error);
       if (error.message === 'Invalid login credentials') {
@@ -81,12 +73,10 @@ const Login: React.FC = () => {
       >
         <div>
           <h2 className="text-3xl font-bold text-center text-gray-900 dark:text-white">
-            {isSignUp ? 'Create an Account' : 'Welcome Back'}
+            Welcome Back
           </h2>
           <p className="mt-2 text-center text-gray-600 dark:text-gray-400">
-            {isSignUp
-              ? 'Sign up to start your career journey'
-              : 'Sign in to continue your career journey'}
+            Sign in to continue your career journey
           </p>
         </div>
 
@@ -154,19 +144,16 @@ const Login: React.FC = () => {
             {isLoading ? (
               <Loader className="animate-spin mr-2" size={20} />
             ) : null}
-            {isSignUp ? 'Sign Up' : 'Sign In'}
+            Sign In
           </button>
 
           <div className="text-center">
             <button
               type="button"
-              onClick={() => {
-                setIsSignUp(!isSignUp);
-                setError(null);
-              }}
+              onClick={() => navigate('/signup')}
               className="text-sm text-blue-600 dark:text-blue-400 hover:text-blue-500 dark:hover:text-blue-300"
             >
-              {isSignUp ? 'Already have an account? Sign In' : "Don't have an account? Sign Up"}
+              Don't have an account? Sign Up
             </button>
           </div>
         </form>
