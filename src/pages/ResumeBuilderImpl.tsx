@@ -3,7 +3,7 @@ import { supabase } from '../lib/supabaseClient';
 import { updateUserStats } from '../lib/supabaseStorage';
 import { defaultResumeData } from '../lib/resume-data';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Download, Eye, Settings2, Palette, Check, ChevronDown, ChevronUp, PlusCircle, Trash2, Loader, Wand2, AlertCircle, X } from 'lucide-react';
+import { Download, Eye, Settings2, Palette, Check, ChevronDown, ChevronUp, PlusCircle, Trash2, Loader, Wand2, AlertCircle, X, GripVertical, Layout, Sparkles, FileText, User, Briefcase, GraduationCap, Award, Code, Languages, Heart, Plus, Edit3, Save, Zap, RotateCcw, Copy } from 'lucide-react';
 import { Document, Page, Text, View, StyleSheet, pdf } from '@react-pdf/renderer';
 import { getOpenAIClient } from '../lib/openai';
 import PremiumPlanModal from '../components/PremiumPlanModal';
@@ -1042,7 +1042,93 @@ const ResumeBuilderImpl = () => {
   };
 
   return (
-    <div className="container mx-auto py-6 px-4">
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-gray-100 dark:from-gray-900 dark:to-slate-900">
+      {/* Modern Header */}
+      <div className="bg-white/80 dark:bg-gray-900/80 backdrop-blur-sm border-b border-gray-200/50 dark:border-gray-700/50 sticky top-0 z-50">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center space-x-4">
+              <div className="flex items-center space-x-3">
+                <div className="w-10 h-10 bg-gradient-to-br from-emerald-500 to-teal-600 rounded-xl flex items-center justify-center">
+                  <FileText className="w-6 h-6 text-white" />
+                </div>
+                <div>
+                  <h1 className="text-xl font-bold text-gray-900 dark:text-white">Resume Builder</h1>
+                  <p className="text-sm text-gray-500 dark:text-gray-400">Create your perfect resume</p>
+                </div>
+              </div>
+            </div>
+            
+            {/* Action Buttons */}
+            <div className="flex items-center space-x-3">
+              <motion.button
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
+                className="flex items-center gap-2 px-4 py-2 bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-300 rounded-xl hover:bg-emerald-200 dark:hover:bg-emerald-800/50 transition-all duration-200 font-medium"
+                onClick={analyzeResume}
+                disabled={isAnalyzingResume}
+              >
+                {isAnalyzingResume ? (
+                  <>
+                    <Loader className="h-4 w-4 animate-spin" />
+                    <span className="hidden sm:inline">Analyzing...</span>
+                  </>
+                ) : (
+                  <>
+                    <Zap className="h-4 w-4" />
+                    <span className="hidden sm:inline">AI Analyze</span>
+                  </>
+                )}
+              </motion.button>
+              
+              {isUserLoggedIn && (
+                <motion.button
+                  whileHover={{ scale: 1.05 }}
+                  whileTap={{ scale: 0.95 }}
+                  className="flex items-center gap-2 px-4 py-2 bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-300 rounded-xl hover:bg-amber-200 dark:hover:bg-amber-800/50 transition-all duration-200 font-medium"
+                  onClick={saveResumeToDashboard}
+                  disabled={isSavingResume}
+                >
+                  {isSavingResume ? (
+                    <>
+                      <Loader className="h-4 w-4 animate-spin" />
+                      <span className="hidden sm:inline">Saving...</span>
+                    </>
+                  ) : (
+                    <>
+                      <Save className="h-4 w-4" />
+                      <span className="hidden sm:inline">Save</span>
+                    </>
+                  )}
+                </motion.button>
+              )}
+              
+              <motion.button
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
+                className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-indigo-600 to-purple-600 text-white rounded-xl hover:from-indigo-700 hover:to-purple-700 transition-all duration-200 font-medium shadow-lg"
+                onClick={handleDownloadPDF}
+                disabled={isGeneratingPdf}
+              >
+                {isGeneratingPdf ? (
+                  <>
+                    <Loader className="h-4 w-4 animate-spin" />
+                    <span className="hidden sm:inline">Generating...</span>
+                  </>
+                ) : (
+                  <>
+                    <Download className="h-4 w-4" />
+                    <span className="hidden sm:inline">Download PDF</span>
+                  </>
+                )}
+              </motion.button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Main Content Container */}
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
       {/* AI Optimization Preview Modal */}
       {aiPreview && (
         <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
@@ -1224,44 +1310,44 @@ const ResumeBuilderImpl = () => {
         </div>
       </header>
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-        <div className="bg-white dark:bg-gray-800 rounded-xl shadow-md p-6 overflow-hidden">
-          {/* Modern tab design with animated slider */}
-          <div className="relative mb-8">
-            <div className="flex p-1 bg-gray-100 dark:bg-gray-700/50 rounded-lg">
-              {/* Background pill that slides between tabs */}
-              <div 
-                className="absolute h-full top-0 transition-all duration-300 ease-out rounded-md bg-white dark:bg-gray-600 shadow-sm z-0"
-                style={{ 
-                  left: activeTab === 'content' ? '0%' : '50%',
-                  width: '50%'
-                }}
-              ></div>
-              
+      {/* Modern Split Layout */}
+      <div className="grid grid-cols-1 lg:grid-cols-5 gap-6 h-[calc(100vh-140px)]">
+        
+        {/* Left Panel - Editor */}
+        <div className="lg:col-span-2 bg-white/70 dark:bg-gray-800/70 backdrop-blur-sm rounded-2xl shadow-xl border border-gray-200/50 dark:border-gray-700/50 overflow-hidden">
+          <div className="flex flex-col h-full">
+            {/* Tab Navigation */}
+            <div className="flex bg-gray-50/80 dark:bg-gray-900/80 border-b border-gray-200/50 dark:border-gray-700/50">
               <button
                 onClick={() => setActiveTab('content')}
-                className={`relative z-10 flex-1 flex items-center justify-center px-3 py-2 text-sm font-medium rounded-md transition-all duration-200 ${
-                  activeTab === 'content' 
-                    ? 'text-gray-900 dark:text-white' 
-                    : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-300'
+                className={`flex-1 px-6 py-4 font-medium transition-all duration-200 ${
+                  activeTab === 'content'
+                    ? 'bg-white dark:bg-gray-800 text-emerald-600 dark:text-emerald-400 border-b-2 border-emerald-500'
+                    : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200 hover:bg-white/50 dark:hover:bg-gray-800/50'
                 }`}
               >
-                <Eye className="mr-2 h-4 w-4" />
-                Content
+                <div className="flex items-center justify-center space-x-2">
+                  <Edit3 className="w-4 h-4" />
+                  <span>Content</span>
+                </div>
               </button>
               <button
                 onClick={() => setActiveTab('customize')}
-                className={`relative z-10 flex-1 flex items-center justify-center px-3 py-2 text-sm font-medium rounded-md transition-all duration-200 ${
-                  activeTab === 'customize' 
-                    ? 'text-gray-900 dark:text-white' 
-                    : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-300'
+                className={`flex-1 px-6 py-4 font-medium transition-all duration-200 ${
+                  activeTab === 'customize'
+                    ? 'bg-white dark:bg-gray-800 text-purple-600 dark:text-purple-400 border-b-2 border-purple-500'
+                    : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200 hover:bg-white/50 dark:hover:bg-gray-800/50'
                 }`}
               >
-                <Settings2 className="mr-2 h-4 w-4" />
-                Customize
+                <div className="flex items-center justify-center space-x-2">
+                  <Palette className="w-4 h-4" />
+                  <span>Design</span>
+                </div>
               </button>
             </div>
-          </div>
+            
+            {/* Tab Content */}
+            <div className="flex-1 overflow-y-auto p-6">
           
           <AnimatePresence mode="wait">
             {activeTab === 'content' ? (
@@ -1280,10 +1366,8 @@ const ResumeBuilderImpl = () => {
                     onClick={() => toggleSection('personal')}
                   >
                     <h2 className="text-lg font-semibold text-gray-900 dark:text-white flex items-center">
-                      <div className="w-8 h-8 rounded-full bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center mr-3">
-                        <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 text-blue-600 dark:text-blue-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
-                        </svg>
+                      <div className="w-8 h-8 rounded-full bg-emerald-100 dark:bg-emerald-900/30 flex items-center justify-center mr-3">
+                        <User className="h-4 w-4 text-emerald-600 dark:text-emerald-400" />
                       </div>
                       Personal Information
                     </h2>
@@ -1440,10 +1524,8 @@ const ResumeBuilderImpl = () => {
                     onClick={() => toggleSection('experience')}
                   >
                     <h2 className="text-lg font-semibold text-gray-900 dark:text-white flex items-center">
-                      <div className="w-8 h-8 rounded-full bg-green-100 dark:bg-green-900/30 flex items-center justify-center mr-3">
-                        <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 text-green-600 dark:text-green-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 13.255A23.931 23.931 0 0112 15c-3.183 0-6.22-.62-9-1.745M16 6V4a2 2 0 00-2-2h-4a2 2 0 00-2 2v2m4 6h.01M5 20h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
-                        </svg>
+                      <div className="w-8 h-8 rounded-full bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center mr-3">
+                        <Briefcase className="h-4 w-4 text-blue-600 dark:text-blue-400" />
                       </div>
                       Work Experience
                     </h2>
@@ -1677,11 +1759,8 @@ const ResumeBuilderImpl = () => {
                       onClick={() => toggleSection('education')}
                     >
                       <h2 className="text-lg font-semibold text-gray-900 dark:text-white flex items-center">
-                        <div className="w-8 h-8 rounded-full bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center mr-3">
-                          <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 text-blue-600 dark:text-blue-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 14l9-5-9-5-9 5 9 5z" />
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 14l6.16-3.422a12.083 12.083 0 01.665 6.479A11.952 11.952 0 0012 20.055a11.952 11.952 0 00-6.824-2.998 12.078 12.078 0 01.665-6.479L12 14z" />
-                          </svg>
+                        <div className="w-8 h-8 rounded-full bg-purple-100 dark:bg-purple-900/30 flex items-center justify-center mr-3">
+                          <GraduationCap className="h-4 w-4 text-purple-600 dark:text-purple-400" />
                         </div>
                         Education
                       </h2>
@@ -2143,79 +2222,32 @@ const ResumeBuilderImpl = () => {
               </motion.div>
             )}
           </AnimatePresence>
+            </div>
+          </div>
         </div>
 
-        <div className="bg-white dark:bg-gray-800 rounded-xl shadow-md p-6 relative">
-          <div className="absolute top-4 right-4 flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-2">
-            <motion.button
-              whileHover={{ scale: 1.05, boxShadow: "0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05)" }}
-              whileTap={{ scale: 0.95 }}
-              className="flex items-center justify-center gap-2 px-3 sm:px-4 py-2 sm:py-2.5 bg-emerald-600 text-white rounded-xl shadow-lg transition-all duration-300 font-medium text-sm sm:text-base w-full sm:w-auto"
-              onClick={analyzeResume}
-              disabled={isAnalyzingResume}
-            >
-              {isAnalyzingResume ? (
-                <>
-                  <Loader className="h-4 w-4 animate-spin mr-1" />
-                  <span>Analyzing...</span>
-                </>
-              ) : (
-                <>
-                  <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4" />
-                  </svg>
-                  <span>Analyze Resume</span>
-                </>
-              )}
-            </motion.button>
+        {/* Right Panel - Resume Preview */}
+        <div className="lg:col-span-3 bg-white/70 dark:bg-gray-800/70 backdrop-blur-sm rounded-2xl shadow-xl border border-gray-200/50 dark:border-gray-700/50 overflow-hidden">
+          <div className="flex flex-col h-full">
+            {/* Preview Header */}
+            <div className="bg-gray-50/80 dark:bg-gray-900/80 border-b border-gray-200/50 dark:border-gray-700/50 px-6 py-4">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center space-x-3">
+                  <div className="w-8 h-8 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-lg flex items-center justify-center">
+                    <Eye className="w-4 h-4 text-white" />
+                  </div>
+                  <div>
+                    <h2 className="text-lg font-bold text-gray-900 dark:text-white">Live Preview</h2>
+                    <p className="text-sm text-gray-500 dark:text-gray-400">Real-time resume preview</p>
+                  </div>
+                </div>
+              </div>
+            </div>
             
-            {/* Save Resume button - only visible for logged-in users */}
-            {isUserLoggedIn && (
-              <motion.button
-                whileHover={{ scale: 1.05, boxShadow: "0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05)" }}
-                whileTap={{ scale: 0.95 }}
-                className={`flex items-center justify-center gap-2 px-3 sm:px-4 py-2 sm:py-2.5 ${isSavingResume ? 'bg-amber-500' : 'bg-amber-600'} text-white rounded-xl shadow-lg transition-all duration-300 font-medium text-sm sm:text-base w-full sm:w-auto`}
-                onClick={saveResumeToDashboard}
-                disabled={isSavingResume}
-              >
-                {isSavingResume ? (
-                  <>
-                    <Loader className="h-4 w-4 animate-spin mr-1" />
-                    <span>Saving...</span>
-                  </>
-                ) : (
-                  <>
-                    <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3m-1 4l-3 3m0 0l-3-3m3 3V4" />
-                    </svg>
-                    <span>Save Resume</span>
-                  </>
-                )}
-              </motion.button>
-            )}
-            <motion.button
-              whileHover={{ scale: 1.05, boxShadow: "0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05)" }}
-              whileTap={{ scale: 0.95 }}
-              className={`flex items-center justify-center gap-2 px-3 sm:px-4 py-2 sm:py-2.5 ${isGeneratingPdf ? 'bg-indigo-500' : 'bg-gradient-to-r from-indigo-600 to-violet-600'} text-white rounded-xl shadow-lg transition-all duration-300 font-medium text-sm sm:text-base w-full sm:w-auto`}
-              onClick={handleDownloadPDF}
-              disabled={isGeneratingPdf}
-            >
-              {isGeneratingPdf ? (
-                <>
-                  <Loader className="h-4 w-4 animate-spin mr-1" />
-                  <span>Generating PDF</span>
-                </>
-              ) : (
-                <>
-                  <Download className="h-4 w-4 mr-1" />
-                  <span>Download PDF</span>
-                </>
-              )}
-            </motion.button>
-          </div>
-          
-          <div className="mt-24 sm:mt-14 border rounded-md p-8 bg-white shadow-sm" ref={resumeRef}>
+            {/* Resume Preview Content */}
+            <div className="flex-1 overflow-y-auto p-6 bg-gray-50/30 dark:bg-gray-900/30">
+              <div className="bg-white rounded-xl shadow-lg p-8 max-w-[8.5in] mx-auto" ref={resumeRef}>
+                {/* Resume content starts here */}
             <div className="mb-6 border-b pb-6">
               <h1 className="text-2xl font-bold" style={{color: theme.primaryColor}}>{resumeData.personalInfo.fullName || "Your Name"}</h1>
               <p className="text-lg text-gray-700">{resumeData.personalInfo.title || "Your Title"}</p>
@@ -2317,6 +2349,8 @@ const ResumeBuilderImpl = () => {
                 <p>Your experience, education, and skills sections will appear here as you add them.</p>
               </div>
             )}
+              </div>
+            </div>
           </div>
         </div>
       </div>
@@ -2330,6 +2364,7 @@ const ResumeBuilderImpl = () => {
         lastRequestedFeature={lastRequestedFeature ? lastRequestedFeature : undefined}
       />
       {/* Login and signup logic are now handled by the PremiumPlanModal component */}
+      </div>
     </div>
   );
 };

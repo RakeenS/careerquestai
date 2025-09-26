@@ -6,6 +6,16 @@
 
 body {
   font-family: 'Inter', sans-serif;
+  overflow-x: hidden;
+}
+
+html {
+  overflow-x: hidden;
+}
+
+/* Ensure all containers respect viewport width */
+* {
+  max-width: 100%;
 }
 
 .ql-editor {

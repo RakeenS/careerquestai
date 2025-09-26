@@ -289,15 +289,15 @@ const Home: React.FC = () => {
         url="https://careerquestai.vercel.app/"
         type="website"
       />
-      <div className="bg-gray-900 min-h-screen">
+      <div className="bg-gray-900 min-h-screen overflow-x-hidden">
       {/* Modern Hero Section with Bento Layout */}
       <header className="relative overflow-hidden bg-gradient-to-br from-gray-900 via-slate-900 to-gray-900">
         {/* Enhanced background elements */}
-        <div className="absolute inset-0 -z-10">
+        <div className="absolute inset-0 -z-10 overflow-hidden">
           <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-emerald-900/20 via-gray-900 to-gray-900"></div>
-          <div className="absolute -top-40 -left-40 w-96 h-96 bg-emerald-500/10 rounded-full filter blur-3xl opacity-70 animate-pulse"></div>
-          <div className="absolute -top-40 -right-40 w-96 h-96 bg-blue-500/10 rounded-full filter blur-3xl opacity-70 animate-pulse animation-delay-2000"></div>
-          <div className="absolute -bottom-40 left-20 w-96 h-96 bg-purple-500/10 rounded-full filter blur-3xl opacity-70 animate-pulse animation-delay-4000"></div>
+          <div className="absolute -top-20 -left-20 w-80 h-80 bg-emerald-500/10 rounded-full filter blur-3xl opacity-70 animate-pulse"></div>
+          <div className="absolute -top-20 -right-20 w-80 h-80 bg-blue-500/10 rounded-full filter blur-3xl opacity-70 animate-pulse animation-delay-2000"></div>
+          <div className="absolute -bottom-20 left-10 w-80 h-80 bg-purple-500/10 rounded-full filter blur-3xl opacity-70 animate-pulse animation-delay-4000"></div>
           
           {/* Modern grid pattern */}
           <div className="absolute inset-0 bg-[linear-gradient(to_right,#80808012_1px,transparent_1px),linear-gradient(to_bottom,#80808012_1px,transparent_1px)] bg-[size:24px_24px]"></div>

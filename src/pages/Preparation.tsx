@@ -380,193 +380,576 @@ const Preparation: React.FC = () => {
       )}
 
       <div className="mb-8">
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8">
           {/* Resume Tailor Card */}
           <motion.div
-            whileHover={{ y: -8, boxShadow: "0 20px 25px -5px rgba(66, 153, 225, 0.15), 0 10px 10px -5px rgba(66, 153, 225, 0.1)" }}
-            transition={{ type: "spring", stiffness: 300 }}
-            className="relative overflow-hidden rounded-xl shadow-lg"
+            whileHover={{ 
+              y: -12, 
+              rotateX: 5,
+              rotateY: 5,
+              scale: 1.02,
+              boxShadow: "0 25px 50px -12px rgba(16, 185, 129, 0.25), 0 0 0 1px rgba(16, 185, 129, 0.05)" 
+            }}
+            whileTap={{ scale: 0.98 }}
+            transition={{ type: "spring", stiffness: 400, damping: 25 }}
+            className="group relative overflow-hidden rounded-3xl shadow-2xl bg-white/10 dark:bg-gray-900/10 backdrop-blur-xl border border-white/20 dark:border-gray-700/20"
+            style={{ 
+              background: 'linear-gradient(135deg, rgba(16, 185, 129, 0.1) 0%, rgba(5, 150, 105, 0.1) 100%)',
+              transformStyle: 'preserve-3d'
+            }}
           >
-            {/* Card background with gradient */}
-            <div className="absolute inset-0 bg-gradient-to-br from-teal-400 to-emerald-600 opacity-90"></div>
+            {/* Animated background gradient */}
+            <div className="absolute inset-0 bg-gradient-to-br from-emerald-400/20 via-teal-500/20 to-green-600/20 opacity-80 group-hover:opacity-100 transition-opacity duration-500"></div>
             
-            {/* Decorative elements */}
-            <div className="absolute top-0 right-0 -mt-10 -mr-10 w-40 h-40 rounded-full bg-white opacity-10"></div>
-            <div className="absolute bottom-0 left-0 -mb-16 -ml-16 w-56 h-56 rounded-full bg-white opacity-10"></div>
+            {/* Floating orbs */}
+            <motion.div 
+              animate={{ 
+                y: [0, -10, 0],
+                rotate: [0, 5, 0]
+              }}
+              transition={{ 
+                duration: 6,
+                repeat: Infinity,
+                ease: "easeInOut"
+              }}
+              className="absolute top-4 right-4 w-20 h-20 rounded-full bg-gradient-to-br from-emerald-300/30 to-teal-400/30 blur-xl"
+            ></motion.div>
+            <motion.div 
+              animate={{ 
+                y: [0, 8, 0],
+                rotate: [0, -3, 0]
+              }}
+              transition={{ 
+                duration: 4,
+                repeat: Infinity,
+                ease: "easeInOut",
+                delay: 1
+              }}
+              className="absolute bottom-6 left-6 w-16 h-16 rounded-full bg-gradient-to-br from-green-300/20 to-emerald-400/20 blur-lg"
+            ></motion.div>
+            
+            {/* Glassmorphism overlay */}
+            <div className="absolute inset-0 bg-gradient-to-br from-white/5 to-transparent backdrop-blur-sm"></div>
             
             <button
               onClick={() => setIsResumeTailorModalOpen(true)}
-              className="relative z-10 w-full h-full p-6 flex flex-col items-center text-white"
+              className="relative z-10 w-full h-full p-8 flex flex-col items-center text-gray-800 dark:text-white group-hover:text-gray-900 dark:group-hover:text-white transition-colors duration-300"
             >
-              <div className="w-16 h-16 mb-4 flex items-center justify-center bg-white bg-opacity-20 backdrop-filter backdrop-blur-sm rounded-xl shadow-inner">
-                <Wand2 size={30} className="text-white" />
-              </div>
-              <h3 className="text-xl font-bold mb-2">Resume Tailor</h3>
-              <p className="text-sm text-center opacity-90 font-light">
-                Customize your resume for specific job postings
+              {/* Icon container with neumorphism */}
+              <motion.div 
+                whileHover={{ scale: 1.1, rotate: 5 }}
+                className="w-20 h-20 mb-6 flex items-center justify-center bg-gradient-to-br from-white/20 to-white/5 backdrop-blur-md rounded-2xl shadow-lg border border-white/30 group-hover:shadow-xl transition-all duration-300"
+                style={{
+                  boxShadow: 'inset 0 1px 0 rgba(255, 255, 255, 0.2), 0 8px 32px rgba(16, 185, 129, 0.15)'
+                }}
+              >
+                <Wand2 size={32} className="text-emerald-600 dark:text-emerald-400 group-hover:text-emerald-700 dark:group-hover:text-emerald-300 transition-colors duration-300" />
+              </motion.div>
+              
+              <h3 className="text-xl font-bold mb-3 bg-gradient-to-r from-emerald-600 to-teal-600 dark:from-emerald-400 dark:to-teal-400 bg-clip-text text-transparent">
+                Resume Tailor
+              </h3>
+              <p className="text-sm text-center opacity-80 font-medium leading-relaxed text-gray-700 dark:text-gray-300">
+                AI-powered resume customization for specific job postings
               </p>
+              
+              {/* Subtle indicator */}
+              <motion.div 
+                initial={{ width: 0 }}
+                whileHover={{ width: "2rem" }}
+                className="mt-4 h-0.5 bg-gradient-to-r from-emerald-500 to-teal-500 rounded-full transition-all duration-300"
+              ></motion.div>
             </button>
           </motion.div>
 
           {/* Cover Letter Card */}
           <motion.div
-            whileHover={{ y: -8, boxShadow: "0 20px 25px -5px rgba(104, 211, 145, 0.15), 0 10px 10px -5px rgba(104, 211, 145, 0.1)" }}
-            transition={{ type: "spring", stiffness: 300 }}
-            className="relative overflow-hidden rounded-xl shadow-lg"
+            whileHover={{ 
+              y: -12, 
+              rotateX: 5,
+              rotateY: -5,
+              scale: 1.02,
+              boxShadow: "0 25px 50px -12px rgba(99, 102, 241, 0.25), 0 0 0 1px rgba(99, 102, 241, 0.05)" 
+            }}
+            whileTap={{ scale: 0.98 }}
+            transition={{ type: "spring", stiffness: 400, damping: 25 }}
+            className="group relative overflow-hidden rounded-3xl shadow-2xl bg-white/10 dark:bg-gray-900/10 backdrop-blur-xl border border-white/20 dark:border-gray-700/20"
+            style={{ 
+              background: 'linear-gradient(135deg, rgba(99, 102, 241, 0.1) 0%, rgba(139, 92, 246, 0.1) 100%)',
+              transformStyle: 'preserve-3d'
+            }}
           >
-            {/* Card background with gradient */}
-            <div className="absolute inset-0 bg-gradient-to-br from-indigo-400 to-purple-600 opacity-90"></div>
+            {/* Animated background gradient */}
+            <div className="absolute inset-0 bg-gradient-to-br from-indigo-400/20 via-purple-500/20 to-violet-600/20 opacity-80 group-hover:opacity-100 transition-opacity duration-500"></div>
             
-            {/* Decorative elements */}
-            <div className="absolute top-0 right-0 -mt-10 -mr-10 w-40 h-40 rounded-full bg-white opacity-10"></div>
-            <div className="absolute bottom-0 left-0 -mb-16 -ml-16 w-56 h-56 rounded-full bg-white opacity-10"></div>
+            {/* Floating orbs */}
+            <motion.div 
+              animate={{ 
+                y: [0, -8, 0],
+                rotate: [0, -5, 0]
+              }}
+              transition={{ 
+                duration: 5,
+                repeat: Infinity,
+                ease: "easeInOut"
+              }}
+              className="absolute top-6 right-6 w-18 h-18 rounded-full bg-gradient-to-br from-indigo-300/30 to-purple-400/30 blur-xl"
+            ></motion.div>
+            <motion.div 
+              animate={{ 
+                y: [0, 10, 0],
+                rotate: [0, 3, 0]
+              }}
+              transition={{ 
+                duration: 7,
+                repeat: Infinity,
+                ease: "easeInOut",
+                delay: 0.5
+              }}
+              className="absolute bottom-4 left-4 w-14 h-14 rounded-full bg-gradient-to-br from-violet-300/20 to-indigo-400/20 blur-lg"
+            ></motion.div>
+            
+            {/* Glassmorphism overlay */}
+            <div className="absolute inset-0 bg-gradient-to-br from-white/5 to-transparent backdrop-blur-sm"></div>
             
             <button
               onClick={() => setIsCoverLetterModalOpen(true)}
-              className="relative z-10 w-full h-full p-6 flex flex-col items-center text-white"
+              className="relative z-10 w-full h-full p-8 flex flex-col items-center text-gray-800 dark:text-white group-hover:text-gray-900 dark:group-hover:text-white transition-colors duration-300"
             >
-              <div className="w-16 h-16 mb-4 flex items-center justify-center bg-white bg-opacity-20 backdrop-filter backdrop-blur-sm rounded-xl shadow-inner">
-                <FileUp size={30} className="text-white" />
-              </div>
-              <h3 className="text-xl font-bold mb-2">Cover Letter</h3>
-              <p className="text-sm text-center opacity-90 font-light">
-                Create compelling letters that showcase your value
+              {/* Icon container with neumorphism */}
+              <motion.div 
+                whileHover={{ scale: 1.1, rotate: -5 }}
+                className="w-20 h-20 mb-6 flex items-center justify-center bg-gradient-to-br from-white/20 to-white/5 backdrop-blur-md rounded-2xl shadow-lg border border-white/30 group-hover:shadow-xl transition-all duration-300"
+                style={{
+                  boxShadow: 'inset 0 1px 0 rgba(255, 255, 255, 0.2), 0 8px 32px rgba(99, 102, 241, 0.15)'
+                }}
+              >
+                <FileUp size={32} className="text-indigo-600 dark:text-indigo-400 group-hover:text-indigo-700 dark:group-hover:text-indigo-300 transition-colors duration-300" />
+              </motion.div>
+              
+              <h3 className="text-xl font-bold mb-3 bg-gradient-to-r from-indigo-600 to-purple-600 dark:from-indigo-400 dark:to-purple-400 bg-clip-text text-transparent">
+                Cover Letter
+              </h3>
+              <p className="text-sm text-center opacity-80 font-medium leading-relaxed text-gray-700 dark:text-gray-300">
+                Create compelling letters that showcase your unique value
               </p>
+              
+              {/* Subtle indicator */}
+              <motion.div 
+                initial={{ width: 0 }}
+                whileHover={{ width: "2rem" }}
+                className="mt-4 h-0.5 bg-gradient-to-r from-indigo-500 to-purple-500 rounded-full transition-all duration-300"
+              ></motion.div>
             </button>
           </motion.div>
 
           {/* Follow-up Email Card */}
           <motion.div
-            whileHover={{ y: -8, boxShadow: "0 20px 25px -5px rgba(236, 72, 153, 0.15), 0 10px 10px -5px rgba(236, 72, 153, 0.1)" }}
-            transition={{ type: "spring", stiffness: 300 }}
-            className="relative overflow-hidden rounded-xl shadow-lg"
+            whileHover={{ 
+              y: -12, 
+              rotateX: -5,
+              rotateY: 5,
+              scale: 1.02,
+              boxShadow: "0 25px 50px -12px rgba(236, 72, 153, 0.25), 0 0 0 1px rgba(236, 72, 153, 0.05)" 
+            }}
+            whileTap={{ scale: 0.98 }}
+            transition={{ type: "spring", stiffness: 400, damping: 25 }}
+            className="group relative overflow-hidden rounded-3xl shadow-2xl bg-white/10 dark:bg-gray-900/10 backdrop-blur-xl border border-white/20 dark:border-gray-700/20"
+            style={{ 
+              background: 'linear-gradient(135deg, rgba(236, 72, 153, 0.1) 0%, rgba(219, 39, 119, 0.1) 100%)',
+              transformStyle: 'preserve-3d'
+            }}
           >
-            {/* Card background with gradient */}
-            <div className="absolute inset-0 bg-gradient-to-br from-rose-400 to-pink-600 opacity-90"></div>
+            {/* Animated background gradient */}
+            <div className="absolute inset-0 bg-gradient-to-br from-rose-400/20 via-pink-500/20 to-fuchsia-600/20 opacity-80 group-hover:opacity-100 transition-opacity duration-500"></div>
             
-            {/* Decorative elements */}
-            <div className="absolute top-0 right-0 -mt-10 -mr-10 w-40 h-40 rounded-full bg-white opacity-10"></div>
-            <div className="absolute bottom-0 left-0 -mb-16 -ml-16 w-56 h-56 rounded-full bg-white opacity-10"></div>
+            {/* Floating orbs */}
+            <motion.div 
+              animate={{ 
+                y: [0, -12, 0],
+                rotate: [0, 8, 0]
+              }}
+              transition={{ 
+                duration: 4.5,
+                repeat: Infinity,
+                ease: "easeInOut"
+              }}
+              className="absolute top-5 right-5 w-16 h-16 rounded-full bg-gradient-to-br from-rose-300/30 to-pink-400/30 blur-xl"
+            ></motion.div>
+            <motion.div 
+              animate={{ 
+                y: [0, 6, 0],
+                rotate: [0, -4, 0]
+              }}
+              transition={{ 
+                duration: 6.5,
+                repeat: Infinity,
+                ease: "easeInOut",
+                delay: 1.2
+              }}
+              className="absolute bottom-6 left-5 w-12 h-12 rounded-full bg-gradient-to-br from-fuchsia-300/20 to-rose-400/20 blur-lg"
+            ></motion.div>
+            
+            {/* Glassmorphism overlay */}
+            <div className="absolute inset-0 bg-gradient-to-br from-white/5 to-transparent backdrop-blur-sm"></div>
             
             <button
               onClick={() => setIsEmailModalOpen(true)}
-              className="relative z-10 w-full h-full p-6 flex flex-col items-center text-white"
+              className="relative z-10 w-full h-full p-8 flex flex-col items-center text-gray-800 dark:text-white group-hover:text-gray-900 dark:group-hover:text-white transition-colors duration-300"
             >
-              <div className="w-16 h-16 mb-4 flex items-center justify-center bg-white bg-opacity-20 backdrop-filter backdrop-blur-sm rounded-xl shadow-inner">
-                <Mail size={30} className="text-white" />
-              </div>
-              <h3 className="text-xl font-bold mb-2">Follow-up Email</h3>
-              <p className="text-sm text-center opacity-90 font-light">
+              {/* Icon container with neumorphism */}
+              <motion.div 
+                whileHover={{ scale: 1.1, rotate: 8 }}
+                className="w-20 h-20 mb-6 flex items-center justify-center bg-gradient-to-br from-white/20 to-white/5 backdrop-blur-md rounded-2xl shadow-lg border border-white/30 group-hover:shadow-xl transition-all duration-300"
+                style={{
+                  boxShadow: 'inset 0 1px 0 rgba(255, 255, 255, 0.2), 0 8px 32px rgba(236, 72, 153, 0.15)'
+                }}
+              >
+                <Mail size={32} className="text-rose-600 dark:text-rose-400 group-hover:text-rose-700 dark:group-hover:text-rose-300 transition-colors duration-300" />
+              </motion.div>
+              
+              <h3 className="text-xl font-bold mb-3 bg-gradient-to-r from-rose-600 to-pink-600 dark:from-rose-400 dark:to-pink-400 bg-clip-text text-transparent">
+                Follow-up Email
+              </h3>
+              <p className="text-sm text-center opacity-80 font-medium leading-relaxed text-gray-700 dark:text-gray-300">
                 Professional emails that increase response rates
               </p>
+              
+              {/* Subtle indicator */}
+              <motion.div 
+                initial={{ width: 0 }}
+                whileHover={{ width: "2rem" }}
+                className="mt-4 h-0.5 bg-gradient-to-r from-rose-500 to-pink-500 rounded-full transition-all duration-300"
+              ></motion.div>
             </button>
           </motion.div>
 
           {/* LinkedIn Optimizer Card */}
           <motion.div
-            whileHover={{ y: -8, boxShadow: "0 20px 25px -5px rgba(251, 191, 36, 0.15), 0 10px 10px -5px rgba(251, 191, 36, 0.1)" }}
-            transition={{ type: "spring", stiffness: 300 }}
-            className="relative overflow-hidden rounded-xl shadow-lg"
+            whileHover={{ 
+              y: -12, 
+              rotateX: 5,
+              rotateY: -5,
+              scale: 1.02,
+              boxShadow: "0 25px 50px -12px rgba(14, 165, 233, 0.25), 0 0 0 1px rgba(14, 165, 233, 0.05)" 
+            }}
+            whileTap={{ scale: 0.98 }}
+            transition={{ type: "spring", stiffness: 400, damping: 25 }}
+            className="group relative overflow-hidden rounded-3xl shadow-2xl bg-white/10 dark:bg-gray-900/10 backdrop-blur-xl border border-white/20 dark:border-gray-700/20"
+            style={{ 
+              background: 'linear-gradient(135deg, rgba(14, 165, 233, 0.1) 0%, rgba(59, 130, 246, 0.1) 100%)',
+              transformStyle: 'preserve-3d'
+            }}
           >
-            {/* Card background with gradient */}
-            <div className="absolute inset-0 bg-gradient-to-br from-cyan-400 to-blue-600 opacity-90"></div>
+            {/* Animated background gradient */}
+            <div className="absolute inset-0 bg-gradient-to-br from-sky-400/20 via-blue-500/20 to-cyan-600/20 opacity-80 group-hover:opacity-100 transition-opacity duration-500"></div>
             
-            {/* Decorative elements */}
-            <div className="absolute top-0 right-0 -mt-10 -mr-10 w-40 h-40 rounded-full bg-white opacity-10"></div>
-            <div className="absolute bottom-0 left-0 -mb-16 -ml-16 w-56 h-56 rounded-full bg-white opacity-10"></div>
+            {/* Floating orbs */}
+            <motion.div 
+              animate={{ 
+                y: [0, -9, 0],
+                rotate: [0, 6, 0]
+              }}
+              transition={{ 
+                duration: 5.5,
+                repeat: Infinity,
+                ease: "easeInOut"
+              }}
+              className="absolute top-4 right-4 w-17 h-17 rounded-full bg-gradient-to-br from-sky-300/30 to-blue-400/30 blur-xl"
+            ></motion.div>
+            <motion.div 
+              animate={{ 
+                y: [0, 7, 0],
+                rotate: [0, -2, 0]
+              }}
+              transition={{ 
+                duration: 6,
+                repeat: Infinity,
+                ease: "easeInOut",
+                delay: 0.8
+              }}
+              className="absolute bottom-5 left-6 w-13 h-13 rounded-full bg-gradient-to-br from-cyan-300/20 to-sky-400/20 blur-lg"
+            ></motion.div>
+            
+            {/* Glassmorphism overlay */}
+            <div className="absolute inset-0 bg-gradient-to-br from-white/5 to-transparent backdrop-blur-sm"></div>
             
             <button
               onClick={() => setIsLinkedInModalOpen(true)}
-              className="relative z-10 w-full h-full p-6 flex flex-col items-center text-white"
+              className="relative z-10 w-full h-full p-8 flex flex-col items-center text-gray-800 dark:text-white group-hover:text-gray-900 dark:group-hover:text-white transition-colors duration-300"
             >
-              <div className="w-16 h-16 mb-4 flex items-center justify-center bg-white bg-opacity-20 backdrop-filter backdrop-blur-sm rounded-xl shadow-inner">
-                <LinkIcon size={30} className="text-white" />
-              </div>
-              <h3 className="text-xl font-bold mb-2">LinkedIn Optimizer</h3>
-              <p className="text-sm text-center opacity-90 font-light">
-                Enhance your profile to attract recruiters
+              {/* Icon container with neumorphism */}
+              <motion.div 
+                whileHover={{ scale: 1.1, rotate: -3 }}
+                className="w-20 h-20 mb-6 flex items-center justify-center bg-gradient-to-br from-white/20 to-white/5 backdrop-blur-md rounded-2xl shadow-lg border border-white/30 group-hover:shadow-xl transition-all duration-300"
+                style={{
+                  boxShadow: 'inset 0 1px 0 rgba(255, 255, 255, 0.2), 0 8px 32px rgba(14, 165, 233, 0.15)'
+                }}
+              >
+                <LinkIcon size={32} className="text-sky-600 dark:text-sky-400 group-hover:text-sky-700 dark:group-hover:text-sky-300 transition-colors duration-300" />
+              </motion.div>
+              
+              <h3 className="text-xl font-bold mb-3 bg-gradient-to-r from-sky-600 to-blue-600 dark:from-sky-400 dark:to-blue-400 bg-clip-text text-transparent">
+                LinkedIn Optimizer
+              </h3>
+              <p className="text-sm text-center opacity-80 font-medium leading-relaxed text-gray-700 dark:text-gray-300">
+                Enhance your profile to attract top recruiters
               </p>
+              
+              {/* Subtle indicator */}
+              <motion.div 
+                initial={{ width: 0 }}
+                whileHover={{ width: "2rem" }}
+                className="mt-4 h-0.5 bg-gradient-to-r from-sky-500 to-blue-500 rounded-full transition-all duration-300"
+              ></motion.div>
             </button>
           </motion.div>
 
           {/* Career Research Card */}
           <motion.div
-            whileHover={{ y: -8, boxShadow: "0 20px 25px -5px rgba(245, 158, 11, 0.15), 0 10px 10px -5px rgba(245, 158, 11, 0.1)" }}
-            transition={{ type: "spring", stiffness: 300 }}
-            className="relative overflow-hidden rounded-xl shadow-lg"
+            whileHover={{ 
+              y: -12, 
+              rotateX: -5,
+              rotateY: -5,
+              scale: 1.02,
+              boxShadow: "0 25px 50px -12px rgba(245, 158, 11, 0.25), 0 0 0 1px rgba(245, 158, 11, 0.05)" 
+            }}
+            whileTap={{ scale: 0.98 }}
+            transition={{ type: "spring", stiffness: 400, damping: 25 }}
+            className="group relative overflow-hidden rounded-3xl shadow-2xl bg-white/10 dark:bg-gray-900/10 backdrop-blur-xl border border-white/20 dark:border-gray-700/20"
+            style={{ 
+              background: 'linear-gradient(135deg, rgba(245, 158, 11, 0.1) 0%, rgba(251, 191, 36, 0.1) 100%)',
+              transformStyle: 'preserve-3d'
+            }}
           >
-            {/* Card background with gradient */}
-            <div className="absolute inset-0 bg-gradient-to-br from-amber-400 to-yellow-600 opacity-90"></div>
+            {/* Animated background gradient */}
+            <div className="absolute inset-0 bg-gradient-to-br from-amber-400/20 via-yellow-500/20 to-orange-600/20 opacity-80 group-hover:opacity-100 transition-opacity duration-500"></div>
             
-            {/* Decorative elements */}
-            <div className="absolute top-0 right-0 -mt-10 -mr-10 w-40 h-40 rounded-full bg-white opacity-10"></div>
-            <div className="absolute bottom-0 left-0 -mb-16 -ml-16 w-56 h-56 rounded-full bg-white opacity-10"></div>
+            {/* Floating orbs */}
+            <motion.div 
+              animate={{ 
+                y: [0, -11, 0],
+                rotate: [0, -7, 0]
+              }}
+              transition={{ 
+                duration: 5,
+                repeat: Infinity,
+                ease: "easeInOut"
+              }}
+              className="absolute top-6 right-5 w-15 h-15 rounded-full bg-gradient-to-br from-amber-300/30 to-yellow-400/30 blur-xl"
+            ></motion.div>
+            <motion.div 
+              animate={{ 
+                y: [0, 9, 0],
+                rotate: [0, 4, 0]
+              }}
+              transition={{ 
+                duration: 7,
+                repeat: Infinity,
+                ease: "easeInOut",
+                delay: 1.5
+              }}
+              className="absolute bottom-4 left-4 w-11 h-11 rounded-full bg-gradient-to-br from-orange-300/20 to-amber-400/20 blur-lg"
+            ></motion.div>
+            
+            {/* Glassmorphism overlay */}
+            <div className="absolute inset-0 bg-gradient-to-br from-white/5 to-transparent backdrop-blur-sm"></div>
             
             <button
               onClick={() => setIsCareerResearchModalOpen(true)}
-              className="relative z-10 w-full h-full p-6 flex flex-col items-center text-white"
+              className="relative z-10 w-full h-full p-8 flex flex-col items-center text-gray-800 dark:text-white group-hover:text-gray-900 dark:group-hover:text-white transition-colors duration-300"
             >
-              <div className="w-16 h-16 mb-4 flex items-center justify-center bg-white bg-opacity-20 backdrop-filter backdrop-blur-sm rounded-xl shadow-inner">
-                <Search size={30} className="text-white" />
-              </div>
-              <h3 className="text-xl font-bold mb-2">Career Research</h3>
-              <p className="text-sm text-center opacity-90 font-light">
-                Explore salary data and insights for careers or companies
+              {/* Icon container with neumorphism */}
+              <motion.div 
+                whileHover={{ scale: 1.1, rotate: 7 }}
+                className="w-20 h-20 mb-6 flex items-center justify-center bg-gradient-to-br from-white/20 to-white/5 backdrop-blur-md rounded-2xl shadow-lg border border-white/30 group-hover:shadow-xl transition-all duration-300"
+                style={{
+                  boxShadow: 'inset 0 1px 0 rgba(255, 255, 255, 0.2), 0 8px 32px rgba(245, 158, 11, 0.15)'
+                }}
+              >
+                <Search size={32} className="text-amber-600 dark:text-amber-400 group-hover:text-amber-700 dark:group-hover:text-amber-300 transition-colors duration-300" />
+              </motion.div>
+              
+              <h3 className="text-xl font-bold mb-3 bg-gradient-to-r from-amber-600 to-yellow-600 dark:from-amber-400 dark:to-yellow-400 bg-clip-text text-transparent">
+                Career Research
+              </h3>
+              <p className="text-sm text-center opacity-80 font-medium leading-relaxed text-gray-700 dark:text-gray-300">
+                Explore salary data and insights for careers & companies
               </p>
+              
+              {/* Subtle indicator */}
+              <motion.div 
+                initial={{ width: 0 }}
+                whileHover={{ width: "2rem" }}
+                className="mt-4 h-0.5 bg-gradient-to-r from-amber-500 to-yellow-500 rounded-full transition-all duration-300"
+              ></motion.div>
             </button>
           </motion.div>
 
           {/* Mock Interview Card */}
           <motion.div
-            whileHover={{ y: -8, boxShadow: "0 20px 25px -5px rgba(79, 70, 229, 0.15), 0 10px 10px -5px rgba(79, 70, 229, 0.1)" }}
-            transition={{ type: "spring", stiffness: 300 }}
-            className="relative overflow-hidden rounded-xl shadow-lg"
+            whileHover={{ 
+              y: -12, 
+              rotateX: 5,
+              rotateY: 5,
+              scale: 1.02,
+              boxShadow: "0 25px 50px -12px rgba(139, 92, 246, 0.25), 0 0 0 1px rgba(139, 92, 246, 0.05)" 
+            }}
+            whileTap={{ scale: 0.98 }}
+            transition={{ type: "spring", stiffness: 400, damping: 25 }}
+            className="group relative overflow-hidden rounded-3xl shadow-2xl bg-white/10 dark:bg-gray-900/10 backdrop-blur-xl border border-white/20 dark:border-gray-700/20"
+            style={{ 
+              background: 'linear-gradient(135deg, rgba(139, 92, 246, 0.1) 0%, rgba(124, 58, 237, 0.1) 100%)',
+              transformStyle: 'preserve-3d'
+            }}
           >
-            {/* Card background with gradient */}
-            <div className="absolute inset-0 bg-gradient-to-br from-purple-400 to-indigo-600 opacity-90"></div>
+            {/* Animated background gradient */}
+            <div className="absolute inset-0 bg-gradient-to-br from-violet-400/20 via-purple-500/20 to-indigo-600/20 opacity-80 group-hover:opacity-100 transition-opacity duration-500"></div>
             
-            {/* Decorative elements */}
-            <div className="absolute top-0 right-0 -mt-10 -mr-10 w-40 h-40 rounded-full bg-white opacity-10"></div>
-            <div className="absolute bottom-0 left-0 -mb-16 -ml-16 w-56 h-56 rounded-full bg-white opacity-10"></div>
+            {/* Floating orbs */}
+            <motion.div 
+              animate={{ 
+                y: [0, -10, 0],
+                rotate: [0, 4, 0]
+              }}
+              transition={{ 
+                duration: 4.8,
+                repeat: Infinity,
+                ease: "easeInOut"
+              }}
+              className="absolute top-5 right-6 w-16 h-16 rounded-full bg-gradient-to-br from-violet-300/30 to-purple-400/30 blur-xl"
+            ></motion.div>
+            <motion.div 
+              animate={{ 
+                y: [0, 8, 0],
+                rotate: [0, -5, 0]
+              }}
+              transition={{ 
+                duration: 6.2,
+                repeat: Infinity,
+                ease: "easeInOut",
+                delay: 1.1
+              }}
+              className="absolute bottom-6 left-5 w-12 h-12 rounded-full bg-gradient-to-br from-indigo-300/20 to-violet-400/20 blur-lg"
+            ></motion.div>
+            
+            {/* Glassmorphism overlay */}
+            <div className="absolute inset-0 bg-gradient-to-br from-white/5 to-transparent backdrop-blur-sm"></div>
             
             <button
               onClick={() => setIsMockInterviewModalOpen(true)}
-              className="relative z-10 w-full h-full p-6 flex flex-col items-center text-white"
+              className="relative z-10 w-full h-full p-8 flex flex-col items-center text-gray-800 dark:text-white group-hover:text-gray-900 dark:group-hover:text-white transition-colors duration-300"
             >
-              <div className="w-16 h-16 mb-4 flex items-center justify-center bg-white bg-opacity-20 backdrop-filter backdrop-blur-sm rounded-xl shadow-inner">
-                <MessageSquare size={30} className="text-white" />
-              </div>
-              <h3 className="text-xl font-bold mb-2">Mock Interview</h3>
-              <p className="text-sm text-center opacity-90 font-light">
+              {/* Icon container with neumorphism */}
+              <motion.div 
+                whileHover={{ scale: 1.1, rotate: -4 }}
+                className="w-20 h-20 mb-6 flex items-center justify-center bg-gradient-to-br from-white/20 to-white/5 backdrop-blur-md rounded-2xl shadow-lg border border-white/30 group-hover:shadow-xl transition-all duration-300"
+                style={{
+                  boxShadow: 'inset 0 1px 0 rgba(255, 255, 255, 0.2), 0 8px 32px rgba(139, 92, 246, 0.15)'
+                }}
+              >
+                <MessageSquare size={32} className="text-violet-600 dark:text-violet-400 group-hover:text-violet-700 dark:group-hover:text-violet-300 transition-colors duration-300" />
+              </motion.div>
+              
+              <h3 className="text-xl font-bold mb-3 bg-gradient-to-r from-violet-600 to-purple-600 dark:from-violet-400 dark:to-purple-400 bg-clip-text text-transparent">
+                Mock Interview
+              </h3>
+              <p className="text-sm text-center opacity-80 font-medium leading-relaxed text-gray-700 dark:text-gray-300">
                 Practice with AI-powered interview simulations
               </p>
+              
+              {/* Subtle indicator */}
+              <motion.div 
+                initial={{ width: 0 }}
+                whileHover={{ width: "2rem" }}
+                className="mt-4 h-0.5 bg-gradient-to-r from-violet-500 to-purple-500 rounded-full transition-all duration-300"
+              ></motion.div>
             </button>
           </motion.div>
 
           {/* Auto Apply Card */}
           <motion.div
-            whileHover={{ y: -8, boxShadow: "0 20px 25px -5px rgba(5, 150, 105, 0.15), 0 10px 10px -5px rgba(5, 150, 105, 0.1)" }}
-            transition={{ type: "spring", stiffness: 300 }}
-            className="relative overflow-hidden rounded-xl shadow-lg"
+            whileHover={{ 
+              y: -12, 
+              rotateX: -5,
+              rotateY: 5,
+              scale: 1.02,
+              boxShadow: "0 25px 50px -12px rgba(34, 197, 94, 0.25), 0 0 0 1px rgba(34, 197, 94, 0.05)" 
+            }}
+            whileTap={{ scale: 0.98 }}
+            transition={{ type: "spring", stiffness: 400, damping: 25 }}
+            className="group relative overflow-hidden rounded-3xl shadow-2xl bg-white/10 dark:bg-gray-900/10 backdrop-blur-xl border border-white/20 dark:border-gray-700/20"
+            style={{ 
+              background: 'linear-gradient(135deg, rgba(34, 197, 94, 0.1) 0%, rgba(16, 185, 129, 0.1) 100%)',
+              transformStyle: 'preserve-3d'
+            }}
           >
-            {/* Card background with gradient */}
-            <div className="absolute inset-0 bg-gradient-to-br from-green-500 to-emerald-600 opacity-90"></div>
+            {/* Animated background gradient */}
+            <div className="absolute inset-0 bg-gradient-to-br from-green-400/20 via-emerald-500/20 to-teal-600/20 opacity-80 group-hover:opacity-100 transition-opacity duration-500"></div>
             
-            {/* Decorative elements */}
-            <div className="absolute top-0 right-0 -mt-10 -mr-10 w-40 h-40 rounded-full bg-white opacity-10"></div>
-            <div className="absolute bottom-0 left-0 -mb-16 -ml-16 w-56 h-56 rounded-full bg-white opacity-10"></div>
+            {/* Floating orbs */}
+            <motion.div 
+              animate={{ 
+                y: [0, -7, 0],
+                rotate: [0, -6, 0]
+              }}
+              transition={{ 
+                duration: 5.3,
+                repeat: Infinity,
+                ease: "easeInOut"
+              }}
+              className="absolute top-4 right-5 w-14 h-14 rounded-full bg-gradient-to-br from-green-300/30 to-emerald-400/30 blur-xl"
+            ></motion.div>
+            <motion.div 
+              animate={{ 
+                y: [0, 11, 0],
+                rotate: [0, 3, 0]
+              }}
+              transition={{ 
+                duration: 6.8,
+                repeat: Infinity,
+                ease: "easeInOut",
+                delay: 0.7
+              }}
+              className="absolute bottom-5 left-6 w-10 h-10 rounded-full bg-gradient-to-br from-teal-300/20 to-green-400/20 blur-lg"
+            ></motion.div>
+            
+            {/* Coming Soon Badge */}
+            <div className="absolute top-4 left-4 px-3 py-1 bg-gradient-to-r from-yellow-400/90 to-orange-500/90 backdrop-blur-sm rounded-full text-xs font-bold text-white shadow-lg">
+              Coming Soon
+            </div>
+            
+            {/* Glassmorphism overlay */}
+            <div className="absolute inset-0 bg-gradient-to-br from-white/5 to-transparent backdrop-blur-sm"></div>
             
             <button
               onClick={() => setShowComingSoonPopup(true)}
-              className="relative z-10 w-full h-full p-6 flex flex-col items-center text-white"
+              className="relative z-10 w-full h-full p-8 flex flex-col items-center text-gray-800 dark:text-white group-hover:text-gray-900 dark:group-hover:text-white transition-colors duration-300"
             >
-              <div className="w-16 h-16 mb-4 flex items-center justify-center bg-white bg-opacity-20 backdrop-filter backdrop-blur-sm rounded-xl shadow-inner">
-                <Download size={30} className="text-white" />
-              </div>
-              <h3 className="text-xl font-bold mb-2">Auto Apply</h3>
-              <p className="text-sm text-center opacity-90 font-light">
+              {/* Icon container with neumorphism */}
+              <motion.div 
+                whileHover={{ scale: 1.1, rotate: 6 }}
+                className="w-20 h-20 mb-6 flex items-center justify-center bg-gradient-to-br from-white/20 to-white/5 backdrop-blur-md rounded-2xl shadow-lg border border-white/30 group-hover:shadow-xl transition-all duration-300"
+                style={{
+                  boxShadow: 'inset 0 1px 0 rgba(255, 255, 255, 0.2), 0 8px 32px rgba(34, 197, 94, 0.15)'
+                }}
+              >
+                <Download size={32} className="text-green-600 dark:text-green-400 group-hover:text-green-700 dark:group-hover:text-green-300 transition-colors duration-300" />
+              </motion.div>
+              
+              <h3 className="text-xl font-bold mb-3 bg-gradient-to-r from-green-600 to-emerald-600 dark:from-green-400 dark:to-emerald-400 bg-clip-text text-transparent">
+                Auto Apply
+              </h3>
+              <p className="text-sm text-center opacity-80 font-medium leading-relaxed text-gray-700 dark:text-gray-300">
                 Chrome extension to auto-fill job applications
               </p>
+              
+              {/* Subtle indicator */}
+              <motion.div 
+                initial={{ width: 0 }}
+                whileHover={{ width: "2rem" }}
+                className="mt-4 h-0.5 bg-gradient-to-r from-green-500 to-emerald-500 rounded-full transition-all duration-300"
+              ></motion.div>
             </button>
           </motion.div>
         </div>
