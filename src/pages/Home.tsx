@@ -15,18 +15,19 @@ import {
   Bot,
   Clock,
   Mail,
-  Video,
-  Blocks,
   Star,
   ArrowRight,
   Fingerprint,
   Users,
-  Gift,
   TrendingUp,
-  Shield,
   Sparkles,
-  Brain,
-  Award
+  Play,
+  Rocket,
+  Globe,
+  MessageSquare,
+  BarChart3,
+  Crown,
+  Gauge
 } from 'lucide-react';
 
 // Import images
@@ -154,95 +155,114 @@ const faqItems = [
   }
 ];
 
-// Feature data with more detailed descriptions
-const features: Feature[] = [
+// Main features with videos (keeping existing videos)
+const mainFeatures: Feature[] = [
   {
-    icon: <Wand2 className="w-6 h-6 text-blue-500" />,
-    title: "AI Resume Optimization",
-    description: "Our advanced AI analyzes your resume against job descriptions, optimizing content and formatting to increase your interview chances by up to 70%. We identify missing keywords, suggest improvements, and ensure your resume passes through Applicant Tracking Systems.",
+    icon: <Gauge className="w-8 h-8 text-emerald-400" />,
+    title: "AI Resume Score & Optimization",
+    description: "Get an instant ATS compatibility score and AI-powered optimization suggestions. Our advanced algorithms analyze your resume against job descriptions, identifying missing keywords and formatting issues that could cost you interviews.",
     videoUrl: "/score.mp4",
     benefits: [
-      "Keyword optimization for ATS systems",
-      "Tailored content suggestions for each job",
+      "Real-time ATS compatibility scoring",
+      "Keyword gap analysis and suggestions",
+      "Industry-specific optimization tips",
       "Professional formatting recommendations"
     ]
   },
   {
-    icon: <Bot className="w-6 h-6 text-purple-500" />,
-    title: "AI Interview Coach",
-    description: "Practice with our intelligent AI interviewer that adapts to your responses, providing real-time feedback and personalized improvement suggestions. Prepare for behavioral, technical, and situational questions across different industries.",
+    icon: <MessageSquare className="w-8 h-8 text-blue-400" />,
+    title: "AI Interview Coach & Practice",
+    description: "Master your interviews with our intelligent AI coach that simulates real interview scenarios. Get personalized feedback on your answers, body language, and communication style to boost your confidence.",
     videoUrl: "/mock.mp4",
     benefits: [
-      "Real-time feedback on your responses",
-      "Industry-specific question preparation",
-      "Body language and tone analysis"
+      "Realistic interview simulations",
+      "Real-time feedback and scoring",
+      "Industry-specific question banks",
+      "Performance tracking over time"
     ]
   },
   {
-    icon: <FileText className="w-6 h-6 text-green-500" />,
+    icon: <Wand2 className="w-8 h-8 text-purple-400" />,
     title: "Smart Resume Builder",
-    description: "Create ATS-friendly resumes with our intelligent builder featuring modern templates and real-time optimization suggestions. Our AI helps you craft compelling descriptions, highlight relevant skills, and format your resume professionally.",
+    description: "Create stunning, ATS-optimized resumes in minutes with our intelligent builder. Choose from premium templates and let AI suggest compelling content that highlights your unique value proposition.",
     videoUrl: "/opt.mp4",
     benefits: [
-      "Modern, professionally designed templates",
-      "AI-powered content suggestions",
-      "One-click formatting options"
+      "20+ premium ATS-friendly templates",
+      "AI-powered content generation",
+      "One-click formatting and styling",
+      "Unlimited PDF downloads"
     ]
-  },
+  }
+];
+
+// Additional features in bento grid layout
+const additionalFeatures: Feature[] = [
   {
-    icon: <Mail className="w-6 h-6 text-pink-500" />,
-    title: "Follow-up Generator",
-    description: "Generate perfectly timed and professionally crafted follow-up emails for every stage of your job search journey. Our templates help you strike the right tone whether you're thanking an interviewer or checking on your application status.",
-    imageUrl: "https://placehold.co/600x400/4f46e5/ffffff?text=Email+Generator",
+    icon: <Mail className="w-6 h-6 text-pink-400" />,
+    title: "Smart Cover Letters",
+    description: "Generate personalized cover letters that complement your resume perfectly. Our AI crafts compelling narratives that showcase your fit for each specific role.",
+    imageUrl: "https://placehold.co/400x300/ec4899/ffffff?text=Cover+Letters",
     benefits: [
-      "Context-aware email templates",
-      "Timing recommendations",
-      "Professional tone customization"
+      "Job-specific customization",
+      "Professional tone matching",
+      "ATS-optimized formatting"
     ]
   },
   {
-    icon: <Video className="w-6 h-6 text-indigo-500" />,
-    title: "Mock Interviews",
-    description: "Simulate real interview scenarios with industry-specific questions and receive detailed performance analytics. Practice technical, behavioral, and case interviews with personalized feedback to help you improve.",
-    imageUrl: "https://placehold.co/600x400/4f46e5/ffffff?text=Mock+Interview",
-    benefits: [
-      "Industry-tailored interview simulations",
-      "Performance metrics and insights",
-      "Improvement tracking over time"
-    ]
-  },
-  {
-    icon: <Blocks className="w-6 h-6 text-orange-500" />,
-    title: "Job Application Tracker",
-    description: "Stay organized with our intelligent tracking system that provides insights and reminders for your job applications. Never miss a follow-up or deadline, and gain insights into your application success patterns.",
-    imageUrl: "https://placehold.co/600x400/4f46e5/ffffff?text=Job+Tracker",
+    icon: <BarChart3 className="w-6 h-6 text-orange-400" />,
+    title: "Application Tracker",
+    description: "Stay organized with intelligent tracking that provides insights into your job search progress and success patterns.",
+    imageUrl: "https://placehold.co/400x300/f97316/ffffff?text=Job+Tracker",
     benefits: [
       "Centralized application management",
-      "Smart follow-up reminders",
-      "Success rate analytics"
+      "Success rate analytics",
+      "Follow-up reminders"
     ]
   },
   {
-    icon: <Briefcase className="w-6 h-6 text-cyan-500" />,
-    title: "AI Job Board",
-    description: "Discover your dream career with our intelligent job board that uses AI to match you with positions perfectly aligned to your skills and career goals. Get personalized job recommendations that have the highest likelihood of success.",
-    imageUrl: "https://placehold.co/600x400/0ea5e9/ffffff?text=AI+Job+Board",
+    icon: <Globe className="w-6 h-6 text-cyan-400" />,
+    title: "LinkedIn Optimizer",
+    description: "Transform your LinkedIn profile into a powerful career magnet with AI-optimized headlines, summaries, and skill recommendations.",
+    imageUrl: "https://placehold.co/400x300/06b6d4/ffffff?text=LinkedIn+Pro",
     benefits: [
-      "AI-powered job matching",
-      "Personalized recommendations",
-      "Quality over quantity approach"
+      "Profile optimization",
+      "Keyword enhancement",
+      "Professional branding"
+    ]
+  },
+  {
+    icon: <Briefcase className="w-6 h-6 text-indigo-400" />,
+    title: "AI Job Matching",
+    description: "Discover opportunities that align perfectly with your skills and career goals through intelligent job matching algorithms.",
+    imageUrl: "https://placehold.co/400x300/6366f1/ffffff?text=Job+Match",
+    benefits: [
+      "Personalized job recommendations",
+      "Skill-based matching",
+      "Quality over quantity"
     ],
     comingSoon: true
   },
   {
-    icon: <Zap className="w-6 h-6 text-purple-500" />,
-    title: "AI Auto Apply",
-    description: "Let our AI handle your job applications automatically. Our groundbreaking technology analyzes job postings, customizes your application materials, and submits applications on your behalf to positions matching your preferences.",
-    imageUrl: "https://placehold.co/600x400/8b5cf6/ffffff?text=AI+Auto+Apply",
+    icon: <Rocket className="w-6 h-6 text-red-400" />,
+    title: "Auto-Apply Assistant",
+    description: "Let AI handle applications automatically with customized resumes and cover letters for each position.",
+    imageUrl: "https://placehold.co/400x300/ef4444/ffffff?text=Auto+Apply",
     benefits: [
-      "Automated application submission",
-      "Custom cover letters for each position",
-      "Application tracking and status updates"
+      "Automated submissions",
+      "Custom applications",
+      "Progress tracking"
+    ],
+    comingSoon: true
+  },
+  {
+    icon: <Crown className="w-6 h-6 text-yellow-400" />,
+    title: "Career Coaching",
+    description: "Get personalized career guidance and strategic advice from our AI career coach to accelerate your professional growth.",
+    imageUrl: "https://placehold.co/400x300/eab308/ffffff?text=AI+Coach",
+    benefits: [
+      "Personalized career roadmaps",
+      "Skill development plans",
+      "Industry insights"
     ],
     comingSoon: true
   }
@@ -270,44 +290,43 @@ const Home: React.FC = () => {
         type="website"
       />
       <div className="bg-gray-900 min-h-screen">
-      {/* Hero Section */}
-      <header className="relative overflow-hidden">
-        {/* Background elements */}
+      {/* Modern Hero Section with Bento Layout */}
+      <header className="relative overflow-hidden bg-gradient-to-br from-gray-900 via-slate-900 to-gray-900">
+        {/* Enhanced background elements */}
         <div className="absolute inset-0 -z-10">
-          <div className="absolute top-0 right-0 w-full h-full bg-gradient-to-br from-gray-900 via-blue-900/20 to-purple-900/20"></div>
-          <div className="absolute -top-40 -left-40 w-80 h-80 bg-purple-500/20 rounded-full filter blur-xl opacity-70 animate-blob"></div>
-          <div className="absolute -top-40 -right-40 w-80 h-80 bg-blue-500/20 rounded-full filter blur-xl opacity-70 animate-blob animation-delay-2000"></div>
-          <div className="absolute -bottom-40 left-20 w-80 h-80 bg-pink-500/20 rounded-full filter blur-xl opacity-70 animate-blob animation-delay-4000"></div>
+          <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-emerald-900/20 via-gray-900 to-gray-900"></div>
+          <div className="absolute -top-40 -left-40 w-96 h-96 bg-emerald-500/10 rounded-full filter blur-3xl opacity-70 animate-pulse"></div>
+          <div className="absolute -top-40 -right-40 w-96 h-96 bg-blue-500/10 rounded-full filter blur-3xl opacity-70 animate-pulse animation-delay-2000"></div>
+          <div className="absolute -bottom-40 left-20 w-96 h-96 bg-purple-500/10 rounded-full filter blur-3xl opacity-70 animate-pulse animation-delay-4000"></div>
           
-          {/* Grid pattern overlay */}
-          <div className="absolute inset-0 bg-grid-slate-100/[0.03] bg-[center_top_-1px] [mask-image:linear-gradient(to_bottom,transparent,black,transparent)]"></div>
+          {/* Modern grid pattern */}
+          <div className="absolute inset-0 bg-[linear-gradient(to_right,#80808012_1px,transparent_1px),linear-gradient(to_bottom,#80808012_1px,transparent_1px)] bg-[size:24px_24px]"></div>
         </div>
 
-        <div className="relative mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 pt-16 pb-20 md:pt-24 md:pb-28 flex flex-col lg:flex-row items-center gap-12">
-          {/* Hero content */}
-          <div className="flex-1 text-center lg:text-left max-w-3xl">
-
-
-            {/* FREE Badge */}
+        <div className="relative mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 pt-20 pb-32">
+          {/* Hero content with modern layout */}
+          <div className="text-center mb-16">
+            {/* Trust badge */}
             <motion.div
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.5, delay: 0.05 }}
-              className="inline-flex items-center bg-gradient-to-r from-green-500 to-emerald-500 text-white px-6 py-2 rounded-full text-sm font-bold mb-6 shadow-lg"
+              transition={{ duration: 0.5 }}
+              className="inline-flex items-center bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 px-4 py-2 rounded-full text-sm font-semibold mb-8 backdrop-blur-sm"
             >
-              <Gift className="w-4 h-4 mr-2" />
-              🎉 100% FREE - No Credit Card Required
+              <Crown className="w-4 h-4 mr-2" />
+              Trusted by 50,000+ professionals worldwide
             </motion.div>
 
             <motion.h1
-              initial={{ opacity: 0, y: 20 }}
+              initial={{ opacity: 0, y: 30 }}
               animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.5, delay: 0.1 }}
-              className="text-5xl md:text-6xl lg:text-7xl font-extrabold mb-6 tracking-tight"
+              transition={{ duration: 0.6, delay: 0.1 }}
+              className="text-6xl md:text-7xl lg:text-8xl font-black mb-8 tracking-tight"
             >
-              <span className="text-white">Land Your Dream Job </span>
-              <span className="bg-clip-text text-transparent bg-gradient-to-r from-green-400 via-emerald-400 to-teal-400">
-                3x Faster
+              <span className="text-white">AI-Powered</span>
+              <br />
+              <span className="bg-gradient-to-r from-emerald-400 via-teal-400 to-cyan-400 bg-clip-text text-transparent">
+                Career Success
               </span>
             </motion.h1>
 
@@ -315,252 +334,317 @@ const Home: React.FC = () => {
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.5, delay: 0.2 }}
-              className="text-xl text-gray-300 mb-4 max-w-2xl mx-auto lg:mx-0"
+              className="text-2xl text-gray-300 mb-12 max-w-4xl mx-auto leading-relaxed"
             >
-              Get AI-powered resume optimization, interview coaching, and job matching - 
-              <span className="text-green-400 font-bold"> completely FREE forever</span>
+              Transform your job search with intelligent resume optimization, AI interview coaching, and personalized career guidance.
+              <span className="block mt-2 text-emerald-400 font-bold text-xl">Everything is 100% FREE forever.</span>
             </motion.p>
 
-            {/* Value proposition bullets */}
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.5, delay: 0.25 }}
-              className="flex flex-wrap justify-center lg:justify-start gap-4 mb-8 text-sm text-gray-300"
-            >
-              <div className="flex items-center">
-                <Check className="w-4 h-4 text-green-400 mr-2" />
-                <span>No hidden fees</span>
-              </div>
-              <div className="flex items-center">
-                <Check className="w-4 h-4 text-green-400 mr-2" />
-                <span>No time limits</span>
-              </div>
-              <div className="flex items-center">
-                <Check className="w-4 h-4 text-green-400 mr-2" />
-                <span>All premium features</span>
-              </div>
-            </motion.div>
-
+            {/* CTA Buttons */}
             <motion.div
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.5, delay: 0.3 }}
-              className="flex flex-col sm:flex-row gap-4 justify-center lg:justify-start"
+              className="flex flex-col sm:flex-row gap-6 justify-center mb-16"
             >
-              <motion.div
-                whileHover={{ scale: 1.03 }}
-                whileTap={{ scale: 0.97 }}
-              >
+              <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
                 {user ? (
                   <button 
                     onClick={() => navigate('/dashboard')}
-                    className="inline-flex items-center justify-center px-8 py-4 rounded-xl bg-gradient-to-r from-green-600 to-emerald-600 text-white font-bold text-lg hover:from-green-700 hover:to-emerald-700 transition-all duration-300 shadow-lg hover:shadow-xl transform hover:scale-105"
+                    className="group relative inline-flex items-center justify-center px-10 py-5 text-xl font-bold text-white bg-gradient-to-r from-emerald-600 to-teal-600 rounded-2xl shadow-2xl hover:shadow-emerald-500/25 transition-all duration-300 overflow-hidden"
                   >
-                    <Zap className="w-5 h-5 mr-2" />
-                    Access Your Free Tools
-                    <ChevronRight className="w-5 h-5 ml-1" />
+                    <div className="absolute inset-0 bg-gradient-to-r from-emerald-500 to-teal-500 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+                    <Rocket className="w-6 h-6 mr-3 relative z-10" />
+                    <span className="relative z-10">Launch Your Career</span>
+                    <ArrowRight className="w-6 h-6 ml-3 relative z-10 group-hover:translate-x-1 transition-transform" />
                   </button>
                 ) : (
                   <Link 
                     to="/signup"
-                    className="inline-flex items-center justify-center px-8 py-4 rounded-xl bg-gradient-to-r from-green-600 to-emerald-600 text-white font-bold text-lg hover:from-green-700 hover:to-emerald-700 transition-all duration-300 shadow-lg hover:shadow-xl transform hover:scale-105"
+                    className="group relative inline-flex items-center justify-center px-10 py-5 text-xl font-bold text-white bg-gradient-to-r from-emerald-600 to-teal-600 rounded-2xl shadow-2xl hover:shadow-emerald-500/25 transition-all duration-300 overflow-hidden"
                   >
-                    <Zap className="w-5 h-5 mr-2" />
-                    Start FREE Now - No Card Required
-                    <ChevronRight className="w-5 h-5 ml-1" />
+                    <div className="absolute inset-0 bg-gradient-to-r from-emerald-500 to-teal-500 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+                    <Rocket className="w-6 h-6 mr-3 relative z-10" />
+                    <span className="relative z-10">Start Free Today</span>
+                    <ArrowRight className="w-6 h-6 ml-3 relative z-10 group-hover:translate-x-1 transition-transform" />
                   </Link>
                 )}
               </motion.div>
+              
               <motion.a
-                whileHover={{ scale: 1.03 }}
-                whileTap={{ scale: 0.97 }}
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
                 href="#features"
-                className="inline-flex items-center justify-center px-6 py-4 rounded-xl border-2 border-green-500 text-green-400 font-semibold hover:bg-green-500 hover:text-white transition-all duration-300"
+                className="inline-flex items-center justify-center px-8 py-5 text-xl font-semibold text-gray-300 border-2 border-gray-600 rounded-2xl hover:border-emerald-500 hover:text-emerald-400 transition-all duration-300 backdrop-blur-sm"
               >
-                See Why It's FREE
-                <ArrowRight className="w-5 h-5 ml-2" />
+                <Play className="w-6 h-6 mr-3" />
+                Watch Demo
               </motion.a>
             </motion.div>
 
-            {/* Urgency/Social Proof */}
+            {/* Trust indicators */}
             <motion.div
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.5, delay: 0.4 }}
-              className="text-center lg:text-left"
+              className="flex flex-wrap justify-center items-center gap-8 text-sm text-gray-400"
             >
-              <p className="text-sm text-gray-400 mb-2">
-                ⚡ Join 50,000+ job seekers who landed their dream jobs
-              </p>
-              <p className="text-xs text-green-400 font-semibold">
-                🔥 Limited time: All premium features FREE forever
-              </p>
+              <div className="flex items-center">
+                <Check className="w-5 h-5 text-emerald-400 mr-2" />
+                <span>No credit card required</span>
+              </div>
+              <div className="flex items-center">
+                <Check className="w-5 h-5 text-emerald-400 mr-2" />
+                <span>Setup in 2 minutes</span>
+              </div>
+              <div className="flex items-center">
+                <Check className="w-5 h-5 text-emerald-400 mr-2" />
+                <span>Cancel anytime</span>
+              </div>
             </motion.div>
           </div>
 
-          {/* Hero image/preview */}
+          {/* Bento Grid Hero Layout */}
           <motion.div
-            initial={{ opacity: 0, scale: 0.9 }}
-            animate={{ opacity: 1, scale: 1 }}
-            transition={{ duration: 0.5, delay: 0.3 }}
-            className="flex-1 relative mt-8 lg:mt-0"
+            initial={{ opacity: 0, y: 40 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.8, delay: 0.5 }}
+            className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 max-w-6xl mx-auto"
           >
-            <div className="relative mx-auto max-w-md">
-              {/* Mock device frame */}
-              <div className="rounded-2xl shadow-2xl bg-gray-800 border border-gray-700 p-1 overflow-hidden">
-                <div className="rounded-xl overflow-hidden border border-gray-700">
-                  <img 
-                    src={dashboardImage} 
-                    alt="CareerQuestAI Dashboard" 
-                    className="w-full h-auto" 
-                  />
+            {/* Main dashboard preview - spans 2 columns */}
+            <div className="md:col-span-2 lg:col-span-2 bg-gradient-to-br from-gray-800/50 to-gray-900/50 backdrop-blur-sm border border-gray-700/50 rounded-3xl p-6 hover:border-emerald-500/30 transition-all duration-300">
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="text-lg font-semibold text-white">AI Resume Dashboard</h3>
+                <div className="flex items-center text-emerald-400 text-sm font-medium">
+                  <Gauge className="w-4 h-4 mr-1" />
+                  Score: 94%
                 </div>
               </div>
-              
-              {/* Floating elements */}
-              <div className="absolute -bottom-6 -left-12 md:-left-16 w-32 md:w-40 h-auto">
-                <div className="bg-gray-800 rounded-lg p-3 shadow-lg border border-gray-700 transform rotate-[-8deg]">
-                  <div className="flex items-center">
-                    <Zap className="text-yellow-500 w-4 h-4" />
-                    <div className="ml-2 text-sm font-medium text-white">Resume Score: 92%</div>
-                  </div>
-                </div>
+              <div className="rounded-2xl overflow-hidden border border-gray-700">
+                <img 
+                  src={dashboardImage} 
+                  alt="CareerQuestAI Dashboard" 
+                  className="w-full h-auto" 
+                />
               </div>
-              
-              <div className="absolute -top-8 -right-6 md:-right-12 w-32 md:w-40 h-auto">
-                <div className="bg-gradient-to-r from-green-600 to-emerald-600 rounded-lg p-3 shadow-lg border border-green-500 transform rotate-[5deg]">
-                  <div className="flex items-center">
-                    <Gift className="text-white w-4 h-4" />
-                    <div className="ml-2 text-sm font-bold text-white">100% FREE!</div>
-                  </div>
+            </div>
+
+            {/* Stats card */}
+            <div className="bg-gradient-to-br from-emerald-500/10 to-teal-500/10 backdrop-blur-sm border border-emerald-500/20 rounded-3xl p-6 hover:border-emerald-500/40 transition-all duration-300">
+              <div className="text-center">
+                <div className="w-12 h-12 bg-emerald-500/20 rounded-2xl flex items-center justify-center mx-auto mb-4">
+                  <TrendingUp className="w-6 h-6 text-emerald-400" />
                 </div>
+                <div className="text-3xl font-bold text-white mb-2">3x</div>
+                <div className="text-emerald-400 font-medium mb-2">Faster Job Placement</div>
+                <div className="text-sm text-gray-400">vs traditional methods</div>
               </div>
+            </div>
+
+            {/* Feature highlight 1 */}
+            <div className="bg-gradient-to-br from-blue-500/10 to-purple-500/10 backdrop-blur-sm border border-blue-500/20 rounded-3xl p-6 hover:border-blue-500/40 transition-all duration-300">
+              <div className="w-12 h-12 bg-blue-500/20 rounded-2xl flex items-center justify-center mb-4">
+                <MessageSquare className="w-6 h-6 text-blue-400" />
+              </div>
+              <h3 className="text-lg font-semibold text-white mb-2">AI Interview Coach</h3>
+              <p className="text-gray-400 text-sm">Practice with realistic scenarios and get instant feedback</p>
+            </div>
+
+            {/* Feature highlight 2 */}
+            <div className="bg-gradient-to-br from-purple-500/10 to-pink-500/10 backdrop-blur-sm border border-purple-500/20 rounded-3xl p-6 hover:border-purple-500/40 transition-all duration-300">
+              <div className="w-12 h-12 bg-purple-500/20 rounded-2xl flex items-center justify-center mb-4">
+                <Wand2 className="w-6 h-6 text-purple-400" />
+              </div>
+              <h3 className="text-lg font-semibold text-white mb-2">Smart Builder</h3>
+              <p className="text-gray-400 text-sm">Create ATS-optimized resumes with AI assistance</p>
             </div>
           </motion.div>
         </div>
         
-        {/* Trusted by companies */}
-        <div className="relative border-t border-gray-800 bg-gray-900/50 py-12">
+        {/* Trusted by companies - Modern design */}
+        <div className="relative border-t border-gray-800/50 bg-gradient-to-r from-gray-900/80 to-slate-900/80 backdrop-blur-sm py-16">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div className="text-center mb-8">
-              <p className="text-green-400 text-sm font-bold mb-2">🎯 50,000+ PROFESSIONALS LANDED JOBS FOR FREE</p>
-              <p className="text-gray-400 text-sm font-medium">Used by job seekers at leading companies worldwide</p>
-            </div>
-            <div className="flex flex-wrap justify-center gap-x-12 gap-y-8">
-              {["Google", "Microsoft", "Amazon", "Apple", "Meta", "Netflix"].map((company) => (
-                <div key={company} className="text-gray-500 font-bold text-xl hover:text-green-400 transition-colors">
-                  {company}
-                </div>
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              className="text-center mb-12"
+            >
+              <p className="text-emerald-400 text-lg font-bold mb-3">🚀 Join 50,000+ Successful Professionals</p>
+              <p className="text-gray-300 text-base">Our users have landed positions at these leading companies</p>
+            </motion.div>
+            
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              transition={{ delay: 0.2 }}
+              className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-8 items-center"
+            >
+              {["Google", "Microsoft", "Amazon", "Apple", "Meta", "Netflix"].map((company, index) => (
+                <motion.div
+                  key={company}
+                  initial={{ opacity: 0, scale: 0.8 }}
+                  whileInView={{ opacity: 1, scale: 1 }}
+                  viewport={{ once: true }}
+                  transition={{ delay: index * 0.1 }}
+                  className="text-center group cursor-pointer"
+                >
+                  <div className="text-gray-400 font-bold text-xl group-hover:text-emerald-400 transition-colors duration-300 transform group-hover:scale-110">
+                    {company}
+                  </div>
+                </motion.div>
               ))}
-            </div>
-            <div className="text-center mt-6">
-              <p className="text-green-400 text-sm font-semibold">
-                💡 They all started with our FREE tools - just like you can!
-              </p>
-            </div>
+            </motion.div>
+            
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              transition={{ delay: 0.4 }}
+              className="text-center mt-12"
+            >
+              <div className="inline-flex items-center bg-emerald-500/10 border border-emerald-500/20 rounded-full px-6 py-3 backdrop-blur-sm">
+                <Sparkles className="w-5 h-5 text-emerald-400 mr-2" />
+                <span className="text-emerald-400 font-semibold">Start your success story today - completely FREE</span>
+              </div>
+            </motion.div>
           </div>
         </div>
       </header>
 
-      {/* Features Section */}
-      <section id="features" className="py-20 bg-gray-900">
+      {/* Modern Features Section with Isolated Components Layout */}
+      <section id="features" className="py-32 bg-gradient-to-b from-gray-900 to-slate-900">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center mb-16">
-            <motion.span
-              initial={{ opacity: 0, y: 10 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true }}
-              className="text-blue-400 font-semibold uppercase tracking-wide"
-            >
-              Powerful Features
-            </motion.span>
-            <motion.h2 
+          {/* Section Header */}
+          <div className="text-center mb-20">
+            <motion.div
               initial={{ opacity: 0, y: 20 }}
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }}
-              className="mt-2 text-4xl font-extrabold text-white mb-4"
+              className="inline-flex items-center bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 px-4 py-2 rounded-full text-sm font-semibold mb-6 backdrop-blur-sm"
             >
-              Supercharge Your Job Search
+              <Sparkles className="w-4 h-4 mr-2" />
+              AI-Powered Features
+            </motion.div>
+            
+            <motion.h2 
+              initial={{ opacity: 0, y: 30 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              className="text-5xl md:text-6xl font-black text-white mb-6 tracking-tight"
+            >
+              Everything You Need to
+              <span className="block bg-gradient-to-r from-emerald-400 to-teal-400 bg-clip-text text-transparent">
+                Land Your Dream Job
+              </span>
             </motion.h2>
+            
             <motion.p 
               initial={{ opacity: 0, y: 20 }}
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }}
               transition={{ delay: 0.2 }}
-              className="text-xl text-gray-300 max-w-3xl mx-auto"
+              className="text-xl text-gray-300 max-w-3xl mx-auto leading-relaxed"
             >
-              Everything you need to land your dream job, powered by cutting-edge AI that adapts to your unique skills and career goals
+              Powerful AI tools that work together to optimize your resume, prepare you for interviews, and accelerate your career growth
             </motion.p>
           </div>
 
-          <div className="space-y-24">
-            {features.slice(0, 3).map((feature, index) => (
+          {/* Main Features with Videos - Isolated Components Layout */}
+          <div className="space-y-32 mb-32">
+            {mainFeatures.map((feature, index) => (
               <motion.div
                 key={feature.title}
-                initial={{ opacity: 0, y: 30 }}
+                initial={{ opacity: 0, y: 50 }}
                 whileInView={{ opacity: 1, y: 0 }}
                 viewport={{ once: true, margin: "-100px" }}
-                transition={{ duration: 0.5, delay: index * 0.1 }}
-                className={`flex flex-col ${index % 2 === 1 ? 'lg:flex-row-reverse' : 'lg:flex-row'} gap-12 items-center`}
+                transition={{ duration: 0.8, delay: index * 0.2 }}
+                className={`flex flex-col ${index % 2 === 1 ? 'lg:flex-row-reverse' : 'lg:flex-row'} gap-16 items-center`}
               >
-                {/* Feature description */}
-                <div className="flex-1 space-y-6">
-                  <div className="inline-flex items-center justify-center w-12 h-12 rounded-xl bg-blue-900/30 text-blue-400">
-                    {feature.icon}
+                {/* Feature Content */}
+                <div className="flex-1 space-y-8">
+                  <div className="flex items-center gap-4">
+                    <div className="w-16 h-16 bg-gradient-to-br from-emerald-500/20 to-teal-500/20 rounded-2xl flex items-center justify-center border border-emerald-500/30">
+                      {feature.icon}
+                    </div>
+                    <div>
+                      <h3 className="text-3xl font-bold text-white mb-2">
+                        {feature.title}
+                      </h3>
+                      <div className="w-16 h-1 bg-gradient-to-r from-emerald-400 to-teal-400 rounded-full"></div>
+                    </div>
                   </div>
-                  <h3 className="text-2xl font-bold text-white flex items-center gap-2">
-                    {feature.title}
-                    {feature.comingSoon && (
-                      <span className="text-xs bg-yellow-500 text-yellow-900 font-bold px-2 py-0.5 rounded-full ml-2">
-                        COMING SOON
-                      </span>
-                    )}
-                  </h3>
-                  <p className="text-lg text-gray-300">
+                  
+                  <p className="text-xl text-gray-300 leading-relaxed">
                     {feature.description}
                   </p>
-                  <ul className="space-y-2">
+                  
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     {feature.benefits.map((benefit, i) => (
-                      <li key={i} className="flex items-start">
-                        <Check className="w-5 h-5 text-green-500 mr-2 mt-0.5 shrink-0" />
-                        <span className="text-gray-300">{benefit}</span>
-                      </li>
+                      <div key={i} className="flex items-start gap-3 p-4 bg-gray-800/50 rounded-xl border border-gray-700/50 hover:border-emerald-500/30 transition-colors">
+                        <div className="w-6 h-6 bg-emerald-500/20 rounded-lg flex items-center justify-center flex-shrink-0 mt-0.5">
+                          <Check className="w-4 h-4 text-emerald-400" />
+                        </div>
+                        <span className="text-gray-300 font-medium">{benefit}</span>
+                      </div>
                     ))}
-                  </ul>
+                  </div>
+                  
+                  <motion.button
+                    whileHover={{ scale: 1.05 }}
+                    whileTap={{ scale: 0.95 }}
+                    className="inline-flex items-center px-8 py-4 bg-gradient-to-r from-emerald-600 to-teal-600 text-white font-bold rounded-2xl hover:from-emerald-500 hover:to-teal-500 transition-all duration-300 shadow-lg hover:shadow-emerald-500/25"
+                  >
+                    Try {feature.title}
+                    <ArrowRight className="w-5 h-5 ml-2" />
+                  </motion.button>
                 </div>
                 
-                {/* Feature screenshot */}
-                <div className="flex-1">
-                  <div className="relative rounded-2xl shadow-2xl bg-gray-800 p-2 border border-gray-700">
-                    <div className="absolute top-0 left-0 w-full h-8 bg-gray-700 rounded-t-2xl flex items-center px-4">
-                      <div className="flex space-x-2">
-                        <div className="w-3 h-3 bg-red-500 rounded-full"></div>
-                        <div className="w-3 h-3 bg-yellow-500 rounded-full"></div>
-                        <div className="w-3 h-3 bg-green-500 rounded-full"></div>
+                {/* Feature Demo - Isolated Components Style */}
+                <div className="flex-1 relative">
+                  <div className="relative">
+                    {/* Main video container with modern styling */}
+                    <div className="relative bg-gradient-to-br from-gray-800/80 to-gray-900/80 backdrop-blur-sm border border-gray-700/50 rounded-3xl p-8 shadow-2xl">
+                      <div className="absolute top-0 left-0 w-full h-12 bg-gradient-to-r from-gray-700/50 to-gray-800/50 rounded-t-3xl flex items-center px-6 border-b border-gray-600/50">
+                        <div className="flex space-x-3">
+                          <div className="w-3 h-3 bg-red-400 rounded-full"></div>
+                          <div className="w-3 h-3 bg-yellow-400 rounded-full"></div>
+                          <div className="w-3 h-3 bg-green-400 rounded-full"></div>
+                        </div>
+                        <div className="ml-auto text-gray-400 text-sm font-medium">
+                          {feature.title}
+                        </div>
                       </div>
-                    </div>
-                    <div className="pt-8 pb-2 overflow-hidden rounded-2xl">
-                      {feature.videoUrl ? (
+                      
+                      <div className="pt-4 rounded-2xl overflow-hidden">
                         <video 
                           src={feature.videoUrl}
-                          className="w-full h-auto rounded-lg"
+                          className="w-full h-auto rounded-2xl shadow-lg"
                           autoPlay
                           loop
                           muted
                           playsInline
                         />
-                      ) : (
-                        <img 
-                          src={feature.imageUrl} 
-                          alt={feature.title}
-                          className="w-full h-auto rounded-lg"
-                          onError={(e) => {
-                            // Fallback if image doesn't exist
-                            e.currentTarget.src = `https://placehold.co/800x450/4f46e5/ffffff?text=${encodeURIComponent(feature.title)}`;
-                          }}
-                        />
-                      )}
+                      </div>
+                    </div>
+                    
+                    {/* Floating UI elements - Isolated Components */}
+                    <div className={`absolute ${index % 2 === 0 ? '-right-6 -top-6' : '-left-6 -top-6'} w-32 h-20`}>
+                      <div className="bg-gradient-to-r from-emerald-500 to-teal-500 rounded-2xl p-4 shadow-xl transform rotate-3 hover:rotate-0 transition-transform duration-300">
+                        <div className="text-white text-sm font-bold">AI Powered</div>
+                        <div className="text-emerald-100 text-xs">100% Free</div>
+                      </div>
+                    </div>
+                    
+                    <div className={`absolute ${index % 2 === 0 ? '-left-8 -bottom-8' : '-right-8 -bottom-8'} w-36 h-24`}>
+                      <div className="bg-gray-800 border border-gray-600 rounded-2xl p-4 shadow-xl transform -rotate-2 hover:rotate-0 transition-transform duration-300">
+                        <div className="flex items-center gap-2 mb-2">
+                          <div className="w-2 h-2 bg-green-400 rounded-full animate-pulse"></div>
+                          <div className="text-white text-xs font-medium">Live Demo</div>
+                        </div>
+                        <div className="text-gray-400 text-xs">Try it now</div>
+                      </div>
                     </div>
                   </div>
                 </div>
@@ -568,172 +652,187 @@ const Home: React.FC = () => {
             ))}
           </div>
           
-          {/* More features in grid layout */}
-          <div className="mt-24 grid grid-cols-1 md:grid-cols-3 gap-8">
-            {features.slice(3).map((feature, index) => (
-              <motion.div
-                key={feature.title}
-                initial={{ opacity: 0, y: 20 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true }}
-                transition={{ delay: index * 0.1 }}
-                className="group bg-gradient-to-br from-gray-800 to-gray-900 rounded-xl p-6 shadow-lg hover:shadow-xl transition-all duration-300 border border-gray-700 hover:border-blue-500"
-              >
-                <div className="w-12 h-12 bg-gray-700 rounded-lg flex items-center justify-center mb-4 shadow-md group-hover:scale-110 transition-transform duration-300">
-                  {feature.icon}
-                </div>
-                <h3 className="text-xl font-semibold text-white mb-2 group-hover:text-blue-400 transition-colors duration-300 flex items-center gap-2">
-                  {feature.title}
-                  {feature.comingSoon && (
-                    <span className="text-xs bg-yellow-500 text-yellow-900 font-bold px-2 py-0.5 rounded-full ml-2 transform group-hover:scale-105 transition-transform duration-300">
-                      COMING SOON
-                    </span>
-                  )}
-                </h3>
-                <p className="text-gray-300 mb-4">
-                  {feature.description.split('.')[0] + '.'}
-                </p>
-                <div className="mt-auto flex justify-end">
-                  <button className="text-blue-400 font-medium inline-flex items-center">
-                    Learn more
-                    <ChevronRight className="w-4 h-4 ml-1" />
-                  </button>
-                </div>
-              </motion.div>
-            ))}
-          </div>
-        </div>
-      </section>
-      
-      {/* Testimonials Section */}
-      <section className="py-20 bg-gray-800">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center mb-16">
-            <motion.span
-              initial={{ opacity: 0, y: 10 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true }}
-              className="text-blue-400 font-semibold uppercase tracking-wide"
-            >
-              Success Stories
-            </motion.span>
-            <motion.h2 
+          {/* Additional Features - Bento Grid Layout */}
+          <div className="mb-20">
+            <motion.h3
               initial={{ opacity: 0, y: 20 }}
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }}
-              className="mt-2 text-4xl font-extrabold text-white mb-4"
+              className="text-3xl font-bold text-white text-center mb-12"
             >
-              From Our Community
-            </motion.h2>
-            <motion.p 
-              initial={{ opacity: 0, y: 20 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true }}
-              transition={{ delay: 0.2 }}
-              className="text-xl text-gray-300 max-w-3xl mx-auto"
-            >
-              Join thousands of professionals who have accelerated their careers with our AI-powered tools
-            </motion.p>
-          </div>
-
-          <div className="mt-24 grid grid-cols-2 md:grid-cols-4 gap-6">
-            {stats.map((stat, index) => (
-              <motion.div
-                key={stat.label}
-                initial={{ opacity: 0, y: 20 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true }}
-                transition={{ delay: index * 0.1 }}
-                className="bg-gray-900 rounded-xl shadow-lg p-6 text-center border border-gray-700"
-              >
-                <div className="flex justify-center mb-4 text-blue-400">
-                  {stat.icon}
-                </div>
-                <div className="text-3xl font-extrabold text-white mb-2">
-                  {stat.value}
-                </div>
-                <div className="text-sm text-gray-400">
-                  {stat.label}
-                </div>
-              </motion.div>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* How It Works Section */}
-      <section className="py-20 bg-gray-900 overflow-hidden">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center mb-16">
-            <motion.span
-              initial={{ opacity: 0, y: 10 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true }}
-              className="text-blue-400 font-semibold uppercase tracking-wide"
-            >
-              The Process
-            </motion.span>
-            <motion.h2 
-              initial={{ opacity: 0, y: 20 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true }}
-              className="mt-2 text-4xl font-extrabold text-white mb-4"
-            >
-              How CareerQuestAI Works
-            </motion.h2>
-            <motion.p 
-              initial={{ opacity: 0, y: 20 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true }}
-              transition={{ delay: 0.2 }}
-              className="text-xl text-gray-300 max-w-3xl mx-auto"
-            >
-              A seamless journey from profile creation to landing your dream job
-            </motion.p>
-          </div>
-
-          {/* Process Steps */}
-          <div className="relative">
-            {/* Connection line */}
-            <div className="absolute left-1/2 top-0 bottom-0 w-0.5 bg-blue-900/50 transform -translate-x-1/2 hidden md:block"></div>
+              Plus Many More Powerful Tools
+            </motion.h3>
             
-            <div className="space-y-16 relative">
-              {processSteps.map((step, index) => (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+              {additionalFeatures.map((feature, index) => (
                 <motion.div
-                  key={step.step}
+                  key={feature.title}
                   initial={{ opacity: 0, y: 30 }}
                   whileInView={{ opacity: 1, y: 0 }}
-                  viewport={{ once: true, margin: "-100px" }}
-                  transition={{ duration: 0.5, delay: index * 0.1 }}
-                  className={`flex flex-col ${index % 2 === 0 ? 'md:flex-row' : 'md:flex-row-reverse'} items-center gap-8`}
+                  viewport={{ once: true }}
+                  transition={{ delay: index * 0.1 }}
+                  className="group relative bg-gradient-to-br from-gray-800/50 to-gray-900/50 backdrop-blur-sm border border-gray-700/50 rounded-3xl p-8 hover:border-emerald-500/30 transition-all duration-500 overflow-hidden"
                 >
-                  {/* Step content */}
-                  <div className="flex-1 order-2 md:order-none">
-                    <div className={`p-6 bg-gray-800 rounded-xl shadow-lg border border-gray-700 ${index % 2 === 0 ? 'md:pr-16' : 'md:pl-16'}`}>
-                      <h3 className="text-xl font-bold text-white mb-3">
-                        {step.title}
-                      </h3>
-                      <p className="text-gray-300">
-                        {step.description}
-                      </p>
-                    </div>
-                  </div>
+                  {/* Background gradient effect */}
+                  <div className="absolute inset-0 bg-gradient-to-br from-emerald-500/5 to-teal-500/5 opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
                   
-                  {/* Step icon */}
-                  <div className="flex-shrink-0 z-10 order-1 md:order-none">
-                    <div className="w-16 h-16 bg-gray-800 rounded-full shadow-lg flex items-center justify-center border-4 border-blue-900/50">
-                      <div className="w-12 h-12 rounded-full bg-blue-600 flex items-center justify-center text-white">
-                        {step.icon}
-                      </div>
+                  <div className="relative z-10">
+                    <div className="w-14 h-14 bg-gradient-to-br from-gray-700 to-gray-800 rounded-2xl flex items-center justify-center mb-6 group-hover:scale-110 transition-transform duration-300 border border-gray-600">
+                      {feature.icon}
                     </div>
-                    {/* Step number */}
-                    <div className="absolute top-0 left-0 w-6 h-6 bg-blue-600 text-white text-xs font-bold rounded-full flex items-center justify-center transform translate-x-6 -translate-y-1">
-                      {step.step}
+                    
+                    <h4 className="text-xl font-bold text-white mb-3 group-hover:text-emerald-400 transition-colors duration-300 flex items-center gap-2">
+                      {feature.title}
+                      {feature.comingSoon && (
+                        <span className="text-xs bg-yellow-500/20 text-yellow-400 border border-yellow-500/30 font-bold px-2 py-1 rounded-full">
+                          SOON
+                        </span>
+                      )}
+                    </h4>
+                    
+                    <p className="text-gray-400 mb-6 leading-relaxed">
+                      {feature.description}
+                    </p>
+                    
+                    <div className="space-y-2 mb-6">
+                      {feature.benefits.slice(0, 2).map((benefit, i) => (
+                        <div key={i} className="flex items-center gap-2 text-sm text-gray-300">
+                          <div className="w-1.5 h-1.5 bg-emerald-400 rounded-full"></div>
+                          <span>{benefit}</span>
+                        </div>
+                      ))}
                     </div>
+                    
+                    <button className="text-emerald-400 font-semibold inline-flex items-center group-hover:text-emerald-300 transition-colors">
+                      Learn more
+                      <ChevronRight className="w-4 h-4 ml-1 group-hover:translate-x-1 transition-transform" />
+                    </button>
                   </div>
                 </motion.div>
               ))}
             </div>
+          </div>
+        </div>
+      </section>
+      
+      {/* Modern Stats & Social Proof Section */}
+      <section className="py-32 bg-gradient-to-b from-slate-900 to-gray-900 relative overflow-hidden">
+        {/* Background elements */}
+        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,_var(--tw-gradient-stops))] from-emerald-900/10 via-transparent to-transparent"></div>
+        
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
+          <div className="text-center mb-20">
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              className="inline-flex items-center bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 px-4 py-2 rounded-full text-sm font-semibold mb-6 backdrop-blur-sm"
+            >
+              <BarChart3 className="w-4 h-4 mr-2" />
+              Proven Results
+            </motion.div>
+            
+            <motion.h2 
+              initial={{ opacity: 0, y: 30 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              className="text-5xl md:text-6xl font-black text-white mb-6 tracking-tight"
+            >
+              Join 50,000+
+              <span className="block bg-gradient-to-r from-emerald-400 to-teal-400 bg-clip-text text-transparent">
+                Success Stories
+              </span>
+            </motion.h2>
+            
+            <motion.p 
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              transition={{ delay: 0.2 }}
+              className="text-xl text-gray-300 max-w-3xl mx-auto leading-relaxed"
+            >
+              Real professionals, real results. See why CareerQuestAI is the #1 choice for job seekers worldwide.
+            </motion.p>
+          </div>
+
+          {/* Stats Grid with Modern Design */}
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-8 mb-20">
+            {stats.map((stat, index) => (
+              <motion.div
+                key={stat.label}
+                initial={{ opacity: 0, y: 30, scale: 0.9 }}
+                whileInView={{ opacity: 1, y: 0, scale: 1 }}
+                viewport={{ once: true }}
+                transition={{ delay: index * 0.1, duration: 0.6 }}
+                className="group relative bg-gradient-to-br from-gray-800/50 to-gray-900/50 backdrop-blur-sm border border-gray-700/50 rounded-3xl p-8 text-center hover:border-emerald-500/30 transition-all duration-500"
+              >
+                {/* Hover effect background */}
+                <div className="absolute inset-0 bg-gradient-to-br from-emerald-500/5 to-teal-500/5 opacity-0 group-hover:opacity-100 transition-opacity duration-500 rounded-3xl"></div>
+                
+                <div className="relative z-10">
+                  <div className="w-16 h-16 bg-gradient-to-br from-emerald-500/20 to-teal-500/20 rounded-2xl flex items-center justify-center mx-auto mb-6 group-hover:scale-110 transition-transform duration-300 border border-emerald-500/30">
+                    <div className="text-emerald-400 group-hover:text-emerald-300 transition-colors">
+                      {stat.icon}
+                    </div>
+                  </div>
+                  
+                  <div className="text-4xl lg:text-5xl font-black text-white mb-3 group-hover:text-emerald-400 transition-colors duration-300">
+                    {stat.value}
+                  </div>
+                  
+                  <div className="text-gray-400 font-medium group-hover:text-gray-300 transition-colors">
+                    {stat.label}
+                  </div>
+                </div>
+              </motion.div>
+            ))}
+          </div>
+          
+          {/* Call to Action */}
+          <motion.div
+            initial={{ opacity: 0, y: 30 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            className="text-center"
+          >
+            <div className="inline-flex items-center bg-gradient-to-r from-emerald-500/10 to-teal-500/10 border border-emerald-500/20 rounded-2xl p-8 backdrop-blur-sm">
+              <div className="text-center">
+                <h3 className="text-2xl font-bold text-white mb-3">
+                  Ready to Join Them?
+                </h3>
+                <p className="text-gray-300 mb-6">
+                  Start your success story today - completely free, no strings attached
+                </p>
+                <motion.button
+                  whileHover={{ scale: 1.05 }}
+                  whileTap={{ scale: 0.95 }}
+                  className="inline-flex items-center px-8 py-4 bg-gradient-to-r from-emerald-600 to-teal-600 text-white font-bold rounded-2xl hover:from-emerald-500 hover:to-teal-500 transition-all duration-300 shadow-lg hover:shadow-emerald-500/25"
+                  onClick={() => user ? navigate('/dashboard') : navigate('/signup')}
+                >
+                  <Rocket className="w-5 h-5 mr-2" />
+                  {user ? 'Go to Dashboard' : 'Start Free Today'}
+                  <ArrowRight className="w-5 h-5 ml-2" />
+                </motion.button>
+              </div>
+            </div>
+          </motion.div>
+        </div>
+      </section>
+
+      {/* Simplified How It Works */}
+      <section className="py-20 bg-gray-900">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
+          <h2 className="text-4xl font-bold text-white mb-12">How It Works</h2>
+          <div className="grid md:grid-cols-3 gap-8">
+            {processSteps.slice(0,3).map((step, index) => (
+              <div key={step.step} className="bg-gray-800 p-6 rounded-xl">
+                <div className="w-12 h-12 bg-emerald-500 rounded-full flex items-center justify-center mx-auto mb-4">
+                  {step.icon}
+                </div>
+                <h3 className="text-xl font-bold text-white mb-2">{step.title}</h3>
+                <p className="text-gray-300">{step.description}</p>
+              </div>
+            ))}
           </div>
         </div>
       </section>
